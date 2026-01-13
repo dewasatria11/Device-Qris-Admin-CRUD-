@@ -392,9 +392,6 @@
       .toast-wrap { right: 18px; left: 18px; }
       .toast { width: 100%; }
     }
-    @media (prefers-reduced-motion: reduce) {
-      * { animation: none !important; transition: none !important; }
-    }
   </style>
 </head>
 <body>
@@ -493,7 +490,7 @@
     </div>
   </div>
 
-  <!-- QR Pairing Modal -->
+  <!-- QR Pairing Modal (NO JS LIB, pakai gambar Google Chart QR) -->
   <div id="qrModal" class="modal" aria-hidden="true">
     <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="qrTitle" aria-describedby="qrDesc">
       <div class="modal-header">
@@ -506,7 +503,8 @@
 
       <div class="qr-grid">
         <div class="qr-canvas-wrap">
-          <canvas id="qrCanvas" width="260" height="260" aria-label="QR Code"></canvas>
+          <img id="qrImg" width="260" height="260" alt="QR Code"
+               style="border-radius:12px; background:#fff; border:1px solid rgba(16,24,40,0.12);" />
         </div>
 
         <div>
@@ -528,439 +526,413 @@
     </div>
   </div>
 
-  <script>
-    const BASE_URL = "https://server.soundboxqris123.workers.dev";
-    document.getElementById("baseUrlText").textContent = BASE_URL;
+<script>
+  const BASE_URL = "https://server.soundboxqris123.workers.dev";
+  document.getElementById("baseUrlText").textContent = BASE_URL;
 
-    const logEl = document.getElementById("log");
-    const adminKeyInput = document.getElementById("adminKey");
-    const toastWrap = document.getElementById("toastWrap");
+  const logEl = document.getElementById("log");
+  const adminKeyInput = document.getElementById("adminKey");
+  const toastWrap = document.getElementById("toastWrap");
 
-    const modalEl = document.getElementById("modal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalMessage = document.getElementById("modalMessage");
-    const modalPrimary = document.getElementById("modalPrimary");
-    const modalSecondary = document.getElementById("modalSecondary");
-    const modalIcon = document.getElementById("modalIcon");
+  const modalEl = document.getElementById("modal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalMessage = document.getElementById("modalMessage");
+  const modalPrimary = document.getElementById("modalPrimary");
+  const modalSecondary = document.getElementById("modalSecondary");
+  const modalIcon = document.getElementById("modalIcon");
 
-    // QR modal refs
-    const qrModalEl = document.getElementById("qrModal");
-    const qrTitleEl = document.getElementById("qrTitle");
-    const qrPayloadEl = document.getElementById("qrPayload");
-    const qrCanvas = document.getElementById("qrCanvas");
+  // QR refs (pakai IMG)
+  const qrModalEl = document.getElementById("qrModal");
+  const qrTitleEl = document.getElementById("qrTitle");
+  const qrPayloadEl = document.getElementById("qrPayload");
+  const qrImg = document.getElementById("qrImg");
 
-    function log(msg) {
-      logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
-    }
+  function log(msg) {
+    logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
+  }
 
-    function toast(message, tone = "info") {
-      const el = document.createElement("div");
-      el.className = `toast ${tone}`;
-      el.textContent = message;
-      toastWrap.appendChild(el);
-      requestAnimationFrame(() => el.classList.add("show"));
+  function toast(message, tone = "info") {
+    const el = document.createElement("div");
+    el.className = `toast ${tone}`;
+    el.textContent = message;
+    toastWrap.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("show"));
 
-      setTimeout(() => {
-        el.classList.remove("show");
-        el.addEventListener("transitionend", () => el.remove(), { once: true });
-      }, 3200);
-    }
+    setTimeout(() => {
+      el.classList.remove("show");
+      el.addEventListener("transitionend", () => el.remove(), { once: true });
+    }, 3200);
+  }
 
-    function showDialog({ title = "Info", message = "", confirmText = "OK", cancelText = null, danger = false }) {
-      return new Promise((resolve) => {
-        modalTitle.textContent = title;
-        modalMessage.textContent = message;
-        modalPrimary.textContent = confirmText;
-        modalSecondary.textContent = cancelText || "Batal";
-        modalSecondary.style.display = cancelText ? "inline-flex" : "none";
-        modalIcon.textContent = danger ? "!" : "i";
-        modalEl.classList.toggle("danger", danger);
-        modalPrimary.classList.toggle("danger", danger);
+  function showDialog({ title = "Info", message = "", confirmText = "OK", cancelText = null, danger = false }) {
+    return new Promise((resolve) => {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modalPrimary.textContent = confirmText;
+      modalSecondary.textContent = cancelText || "Batal";
+      modalSecondary.style.display = cancelText ? "inline-flex" : "none";
+      modalIcon.textContent = danger ? "!" : "i";
+      modalEl.classList.toggle("danger", danger);
+      modalPrimary.classList.toggle("danger", danger);
 
-        modalEl.classList.add("show");
-        modalEl.setAttribute("aria-hidden", "false");
+      modalEl.classList.add("show");
+      modalEl.setAttribute("aria-hidden", "false");
 
-        const cleanup = (result) => {
-          modalEl.classList.remove("show");
-          modalEl.setAttribute("aria-hidden", "true");
-          modalPrimary.onclick = null;
-          modalSecondary.onclick = null;
-          modalEl.removeEventListener("click", onOutside);
-          window.removeEventListener("keydown", onKey);
-          resolve(result);
-        };
-
-        const onKey = (event) => { if (event.key === "Escape") cleanup(false); };
-        const onOutside = (event) => { if (event.target === modalEl) cleanup(false); };
-
-        modalPrimary.onclick = () => cleanup(true);
-        modalSecondary.onclick = () => cleanup(false);
-        modalEl.addEventListener("click", onOutside);
-        window.addEventListener("keydown", onKey);
-      });
-    }
-
-    function uiAlert(message, options = {}) {
-      return showDialog({
-        title: options.title || "Info",
-        message,
-        confirmText: options.confirmText || "Tutup",
-        danger: Boolean(options.danger)
-      });
-    }
-
-    function uiConfirm(message, options = {}) {
-      return showDialog({
-        title: options.title || "Konfirmasi",
-        message,
-        confirmText: options.confirmText || "Ya, lanjut",
-        cancelText: options.cancelText || "Batal",
-        danger: Boolean(options.danger)
-      });
-    }
-
-    function getKey() {
-      return sessionStorage.getItem("ADMIN_KEY") || "";
-    }
-
-    async function saveKey() {
-      const k = adminKeyInput.value.trim();
-      if (!k) {
-        await uiAlert("Masukkan ADMIN_KEY dulu", { title: "Input belum lengkap" });
-        return;
-      }
-      sessionStorage.setItem("ADMIN_KEY", k);
-      adminKeyInput.value = "";
-      log("ADMIN_KEY tersimpan di sessionStorage");
-      toast("ADMIN_KEY tersimpan", "success");
-      refresh();
-    }
-
-    function clearKey() {
-      sessionStorage.removeItem("ADMIN_KEY");
-      log("ADMIN_KEY dihapus dari sessionStorage");
-      toast("ADMIN_KEY dihapus", "info");
-      renderTable([]);
-    }
-
-    async function adminFetch(path, opts = {}) {
-      const k = getKey();
-      if (!k) throw new Error("ADMIN_KEY belum diset (isi dulu di Login Admin)");
-
-      const headers = Object.assign({ "x-admin-key": k }, opts.headers || {});
-      const res = await fetch(BASE_URL + path, { ...opts, headers });
-      const txt = await res.text();
-
-      let data;
-      try { data = JSON.parse(txt); } catch { data = txt; }
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
-      }
-      return data;
-    }
-
-    async function refresh() {
-      try {
-        log("GET /admin/stores ...");
-        const data = await adminFetch("/admin/stores");
-        renderTable(data.stores || []);
-        log(`OK: loaded ${data.stores?.length || 0} stores`);
-      } catch (e) {
-        log(`ERR: ${e.message}`);
-        await uiAlert(e.message, { title: "Gagal memuat data", danger: true });
-      }
-    }
-
-    function getForm() {
-      return {
-        store_id: document.getElementById("store_id").value.trim(),
-        name: document.getElementById("name").value.trim(),
+      const cleanup = (result) => {
+        modalEl.classList.remove("show");
+        modalEl.setAttribute("aria-hidden", "true");
+        modalPrimary.onclick = null;
+        modalSecondary.onclick = null;
+        modalEl.removeEventListener("click", onOutside);
+        window.removeEventListener("keydown", onKey);
+        resolve(result);
       };
+
+      const onKey = (event) => { if (event.key === "Escape") cleanup(false); };
+      const onOutside = (event) => { if (event.target === modalEl) cleanup(false); };
+
+      modalPrimary.onclick = () => cleanup(true);
+      modalSecondary.onclick = () => cleanup(false);
+      modalEl.addEventListener("click", onOutside);
+      window.addEventListener("keydown", onKey);
+    });
+  }
+
+  function uiAlert(message, options = {}) {
+    return showDialog({
+      title: options.title || "Info",
+      message,
+      confirmText: options.confirmText || "Tutup",
+      danger: Boolean(options.danger)
+    });
+  }
+
+  function uiConfirm(message, options = {}) {
+    return showDialog({
+      title: options.title || "Konfirmasi",
+      message,
+      confirmText: options.confirmText || "Ya, lanjut",
+      cancelText: options.cancelText || "Batal",
+      danger: Boolean(options.danger)
+    });
+  }
+
+  function getKey() {
+    return sessionStorage.getItem("ADMIN_KEY") || "";
+  }
+
+  async function saveKey() {
+    const k = adminKeyInput.value.trim();
+    if (!k) {
+      await uiAlert("Masukkan ADMIN_KEY dulu", { title: "Input belum lengkap" });
+      return;
+    }
+    sessionStorage.setItem("ADMIN_KEY", k);
+    adminKeyInput.value = "";
+    log("ADMIN_KEY tersimpan di sessionStorage");
+    toast("ADMIN_KEY tersimpan", "success");
+    refresh();
+  }
+
+  function clearKey() {
+    sessionStorage.removeItem("ADMIN_KEY");
+    log("ADMIN_KEY dihapus dari sessionStorage");
+    toast("ADMIN_KEY dihapus", "info");
+    renderTable([]);
+  }
+
+  async function adminFetch(path, opts = {}) {
+    const k = getKey();
+    if (!k) throw new Error("ADMIN_KEY belum diset (isi dulu di Login Admin)");
+
+    const headers = Object.assign({ "x-admin-key": k }, opts.headers || {});
+    const res = await fetch(BASE_URL + path, { ...opts, headers });
+    const txt = await res.text();
+
+    let data;
+    try { data = JSON.parse(txt); } catch { data = txt; }
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
+    }
+    return data;
+  }
+
+  async function refresh() {
+    try {
+      log("GET /admin/stores ...");
+      const data = await adminFetch("/admin/stores");
+      renderTable(data.stores || []);
+      log(`OK: loaded ${data.stores?.length || 0} stores`);
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal memuat data", danger: true });
+    }
+  }
+
+  function getForm() {
+    return {
+      store_id: document.getElementById("store_id").value.trim(),
+      name: document.getElementById("name").value.trim(),
+    };
+  }
+
+  function setForm(store_id, name) {
+    document.getElementById("store_id").value = store_id || "";
+    document.getElementById("name").value = name || "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function upsertStore(extra = {}) {
+    const { store_id, name } = getForm();
+    if (!store_id || !name) {
+      await uiAlert("store_id dan name wajib diisi", { title: "Input belum lengkap" });
+      return;
     }
 
-    function setForm(store_id, name) {
-      document.getElementById("store_id").value = store_id || "";
-      document.getElementById("name").value = name || "";
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    async function upsertStore(extra = {}) {
-      const { store_id, name } = getForm();
-      if (!store_id || !name) {
-        await uiAlert("store_id dan name wajib diisi", { title: "Input belum lengkap" });
-        return;
-      }
-
-      try {
-        log("POST /admin/stores (upsert) ...");
-        const payload = { store_id, name, ...extra };
-        const out = await adminFetch("/admin/stores", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        log(`OK: upsert ${store_id} | token=${out.device_token}`);
-        await refresh();
-
-        const message = `Store tersimpan.\n\nstore_id: ${out.store_id}\nname: ${out.name}\ndevice_token: ${out.device_token}\n\nSimpan token ini untuk soundbox.`;
-        await uiAlert(message, { title: "Berhasil" });
-      } catch (e) {
-        log(`ERR: ${e.message}`);
-        await uiAlert(e.message, { title: "Gagal menyimpan", danger: true });
-      }
-    }
-
-    function randomHex(len = 32) {
-      const arr = new Uint8Array(len / 2);
-      crypto.getRandomValues(arr);
-      return [...arr].map(b => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    async function generateToken() {
-      const { store_id, name } = getForm();
-      if (!store_id || !name) {
-        await uiAlert("Isi store_id dan name dulu, baru generate token", { title: "Input belum lengkap" });
-        return;
-      }
-
-      const newToken = "sb_" + randomHex(32);
-      await upsertStore({ device_token: newToken });
-    }
-
-    async function enableStore(store_id) {
-      try {
-        log(`POST /admin/stores/enable ${store_id} ...`);
-        await adminFetch("/admin/stores/enable", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ store_id }),
-        });
-        log(`OK: enabled ${store_id}`);
-        toast(`${store_id} enabled`, "success");
-        await refresh();
-      } catch (e) {
-        log(`ERR: ${e.message}`);
-        await uiAlert(e.message, { title: "Gagal mengaktifkan", danger: true });
-      }
-    }
-
-    async function disableStore(store_id) {
-      try {
-        log(`POST /admin/stores/disable ${store_id} ...`);
-        await adminFetch("/admin/stores/disable", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ store_id }),
-        });
-        log(`OK: disabled ${store_id}`);
-        toast(`${store_id} disabled`, "info");
-        await refresh();
-      } catch (e) {
-        log(`ERR: ${e.message}`);
-        await uiAlert(e.message, { title: "Gagal menonaktifkan", danger: true });
-      }
-    }
-
-    async function deleteStore(store_id) {
-      const confirmed = await uiConfirm(`Hapus store ${store_id}? (permanen)`, {
-        title: "Konfirmasi hapus",
-        confirmText: "Hapus",
-        cancelText: "Batal",
-        danger: true
-      });
-      if (!confirmed) return;
-
-      try {
-        log(`POST /admin/stores/delete ${store_id} ...`);
-        await adminFetch("/admin/stores/delete", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ store_id }),
-        });
-        log(`OK: deleted ${store_id}`);
-        toast(`${store_id} dihapus`, "info");
-        await refresh();
-      } catch (e) {
-        log(`ERR: ${e.message}`);
-        await uiAlert(e.message, { title: "Gagal menghapus", danger: true });
-      }
-    }
-
-    async function copy(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        log("Copied to clipboard");
-        toast("Tersalin ke clipboard", "success");
-      } catch {
-        await uiAlert("Gagal copy (browser tidak mengizinkan). Copy manual ya.", { title: "Tidak bisa copy" });
-      }
-    }
-
-    function escapeHtml(s) {
-      return String(s).replace(/[&<>"']/g, m => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[m]));
-    }
-    function escapeJs(s) {
-      return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-    }
-
-    // =========================================
-    // QR FIX: ensure QR lib loaded (fallback CDNs)
-    // =========================================
-    async function ensureQrLib() {
-      if (window.QRCode) return true;
-
-      const cdns = [
-        "https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js",
-        "https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js",
-        "https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js",
-      ];
-
-      for (const src of cdns) {
-        const ok = await new Promise((resolve) => {
-          const s = document.createElement("script");
-          s.src = src;
-          s.async = true;
-          s.onload = () => resolve(true);
-          s.onerror = () => resolve(false);
-          document.head.appendChild(s);
-        });
-
-        if (ok && window.QRCode) {
-          log(`QR lib loaded: ${src}`);
-          return true;
-        }
-      }
-
-      return false;
-    }
-
-    // ==========================
-    // QR Pairing
-    // ==========================
-    function closeQR() {
-      qrModalEl.classList.remove("show");
-      qrModalEl.setAttribute("aria-hidden", "true");
-      qrModalEl.removeEventListener("click", onQRBackdrop);
-      window.removeEventListener("keydown", onQREsc);
-    }
-
-    function onQRBackdrop(e) {
-      if (e.target === qrModalEl) closeQR();
-    }
-    function onQREsc(e) {
-      if (e.key === "Escape") closeQR();
-    }
-
-    async function showQR(store_id, device_token, name) {
-      const loaded = await ensureQrLib();
-      if (!loaded) {
-        await uiAlert(
-          "Library QR gagal dimuat. Coba ganti jaringan / matikan adblock, lalu refresh halaman.",
-          { title: "QR Error", danger: true }
-        );
-        return;
-      }
-      if (!store_id || !device_token) {
-        await uiAlert("store_id / device_token kosong. Pastikan store punya token.", { title: "QR Error", danger: true });
-        return;
-      }
-
-      const payloadObj = { store_id, device_token };
-      const payload = JSON.stringify(payloadObj);
-
-      document.getElementById("qrTitle").textContent = `QR Pairing • ${name || store_id}`;
-      qrPayloadEl.textContent = payload;
-
-      await window.QRCode.toCanvas(qrCanvas, payload, {
-        errorCorrectionLevel: "M",
-        margin: 2,
-        width: 260
+    try {
+      log("POST /admin/stores (upsert) ...");
+      const payload = { store_id, name, ...extra };
+      const out = await adminFetch("/admin/stores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      qrModalEl.classList.add("show");
-      qrModalEl.setAttribute("aria-hidden", "false");
-      qrModalEl.addEventListener("click", onQRBackdrop);
-      window.addEventListener("keydown", onQREsc);
+      log(`OK: upsert ${store_id} | token=${out.device_token}`);
+      await refresh();
+
+      const message = `Store tersimpan.\n\nstore_id: ${out.store_id}\nname: ${out.name}\ndevice_token: ${out.device_token}\n\nSimpan token ini untuk soundbox.`;
+      await uiAlert(message, { title: "Berhasil" });
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal menyimpan", danger: true });
+    }
+  }
+
+  function randomHex(len = 32) {
+    const arr = new Uint8Array(len / 2);
+    crypto.getRandomValues(arr);
+    return [...arr].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function generateToken() {
+    const { store_id, name } = getForm();
+    if (!store_id || !name) {
+      await uiAlert("Isi store_id dan name dulu, baru generate token", { title: "Input belum lengkap" });
+      return;
     }
 
-    function downloadQR() {
+    const newToken = "sb_" + randomHex(32);
+    await upsertStore({ device_token: newToken });
+  }
+
+  async function enableStore(store_id) {
+    try {
+      log(`POST /admin/stores/enable ${store_id} ...`);
+      await adminFetch("/admin/stores/enable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id }),
+      });
+      log(`OK: enabled ${store_id}`);
+      toast(`${store_id} enabled`, "success");
+      await refresh();
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal mengaktifkan", danger: true });
+    }
+  }
+
+  async function disableStore(store_id) {
+    try {
+      log(`POST /admin/stores/disable ${store_id} ...`);
+      await adminFetch("/admin/stores/disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id }),
+      });
+      log(`OK: disabled ${store_id}`);
+      toast(`${store_id} disabled`, "info");
+      await refresh();
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal menonaktifkan", danger: true });
+    }
+  }
+
+  async function deleteStore(store_id) {
+    const confirmed = await uiConfirm(`Hapus store ${store_id}? (permanen)`, {
+      title: "Konfirmasi hapus",
+      confirmText: "Hapus",
+      cancelText: "Batal",
+      danger: true
+    });
+    if (!confirmed) return;
+
+    try {
+      log(`POST /admin/stores/delete ${store_id} ...`);
+      await adminFetch("/admin/stores/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id }),
+      });
+      log(`OK: deleted ${store_id}`);
+      toast(`${store_id} dihapus`, "info");
+      await refresh();
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal menghapus", danger: true });
+    }
+  }
+
+  async function copy(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      log("Copied to clipboard");
+      toast("Tersalin ke clipboard", "success");
+    } catch {
+      await uiAlert("Gagal copy (browser tidak mengizinkan). Copy manual ya.", { title: "Tidak bisa copy" });
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[m]));
+  }
+  function escapeJs(s) {
+    return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  }
+
+  // ==========================
+  // QR Pairing (NO LIB)
+  // ==========================
+  function closeQR() {
+    qrModalEl.classList.remove("show");
+    qrModalEl.setAttribute("aria-hidden", "true");
+    qrModalEl.removeEventListener("click", onQRBackdrop);
+    window.removeEventListener("keydown", onQREsc);
+  }
+  function onQRBackdrop(e) { if (e.target === qrModalEl) closeQR(); }
+  function onQREsc(e) { if (e.key === "Escape") closeQR(); }
+
+  async function showQR(store_id, device_token, name) {
+    if (!store_id || !device_token) {
+      await uiAlert("store_id / device_token kosong. Pastikan store punya token.", { title: "QR Error", danger: true });
+      return;
+    }
+
+    const payloadObj = { store_id, device_token };
+    const payload = JSON.stringify(payloadObj);
+
+    qrTitleEl.textContent = `QR Pairing • ${name || store_id}`;
+    qrPayloadEl.textContent = payload;
+
+    // QR PNG via Google Chart API
+    const url = "https://chart.googleapis.com/chart"
+      + "?cht=qr"
+      + "&chs=260x260"
+      + "&chld=M|2"
+      + "&chl=" + encodeURIComponent(payload);
+
+    qrImg.src = url;
+
+    qrModalEl.classList.add("show");
+    qrModalEl.setAttribute("aria-hidden", "false");
+    qrModalEl.addEventListener("click", onQRBackdrop);
+    window.addEventListener("keydown", onQREsc);
+  }
+
+  async function downloadQR() {
+    const storeId = (() => {
       try {
-        const link = document.createElement("a");
-        const storeId = (() => {
-          try {
-            const j = JSON.parse(qrPayloadEl.textContent || "{}");
-            return j.store_id || "store";
-          } catch {
-            return "store";
-          }
-        })();
-        link.download = `pairing-${storeId}.png`;
-        link.href = qrCanvas.toDataURL("image/png");
-        link.click();
-        toast("QR diunduh", "success");
-      } catch {
-        uiAlert("Gagal download QR. Coba browser lain.", { title: "Download gagal", danger: true });
-      }
+        const j = JSON.parse(qrPayloadEl.textContent || "{}");
+        return j.store_id || "store";
+      } catch { return "store"; }
+    })();
+
+    const filename = `pairing-${storeId}.png`;
+
+    try {
+      const res = await fetch(qrImg.src, { mode: "cors" });
+      if (!res.ok) throw new Error("fetch not ok");
+      const blob = await res.blob();
+
+      const a = document.createElement("a");
+      const objectUrl = URL.createObjectURL(blob);
+      a.href = objectUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+
+      toast("QR diunduh", "success");
+    } catch (e) {
+      // fallback: buka di tab baru, save manual
+      window.open(qrImg.src, "_blank", "noopener,noreferrer");
+      await uiAlert(
+        "Browser memblokir download otomatis.\nAku buka QR di tab baru—silakan Save/Download manual.",
+        { title: "Download via tab baru" }
+      );
+    }
+  }
+
+  function renderTable(stores) {
+    const wrap = document.getElementById("tableWrap");
+    if (!stores.length) {
+      wrap.innerHTML = `<div class="muted" style="padding:12px">Tidak ada store (atau belum login admin).</div>`;
+      return;
     }
 
-    function renderTable(stores) {
-      const wrap = document.getElementById("tableWrap");
-      if (!stores.length) {
-        wrap.innerHTML = `<div class="muted" style="padding:12px">Tidak ada store (atau belum login admin).</div>`;
-        return;
-      }
-
-      const rows = stores.map(s => {
-        const badge = s.enabled ? `<span class="pill ok">enabled</span>` : `<span class="pill off">disabled</span>`;
-        const token = s.device_token || "";
-        return `
-          <tr>
-            <td>
-              <b>${escapeHtml(s.store_id)}</b>
-              <div class="muted">${escapeHtml(s.created_at || "")}</div>
-            </td>
-            <td>${escapeHtml(s.name || "")}</td>
-            <td>${badge}</td>
-            <td>
-              <div class="tokenBox">${escapeHtml(token)}</div>
-              <div class="actions" style="margin-top:8px">
-                <button class="secondary" onclick="copy('${escapeJs(token)}')">Copy Token</button>
-                <button class="secondary" onclick="showQR('${escapeJs(s.store_id)}','${escapeJs(token)}','${escapeJs(s.name || "")}')">QR Pairing</button>
-              </div>
-            </td>
-            <td>
-              <div class="actions">
-                <button class="secondary" onclick="setForm('${escapeJs(s.store_id)}','${escapeJs(s.name)}')">Edit</button>
-                ${s.enabled
-                  ? `<button class="secondary" onclick="disableStore('${escapeJs(s.store_id)}')">Disable</button>`
-                  : `<button class="secondary" onclick="enableStore('${escapeJs(s.store_id)}')">Enable</button>`
-                }
-                <button class="danger" onclick="deleteStore('${escapeJs(s.store_id)}')">Delete</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join("");
-
-      wrap.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>store_id</th>
-              <th>name</th>
-              <th>status</th>
-              <th>device_token (soundbox)</th>
-              <th>actions</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
+    const rows = stores.map(s => {
+      const badge = s.enabled ? `<span class="pill ok">enabled</span>` : `<span class="pill off">disabled</span>`;
+      const token = s.device_token || "";
+      return `
+        <tr>
+          <td>
+            <b>${escapeHtml(s.store_id)}</b>
+            <div class="muted">${escapeHtml(s.created_at || "")}</div>
+          </td>
+          <td>${escapeHtml(s.name || "")}</td>
+          <td>${badge}</td>
+          <td>
+            <div class="tokenBox">${escapeHtml(token)}</div>
+            <div class="actions" style="margin-top:8px">
+              <button class="secondary" onclick="copy('${escapeJs(token)}')">Copy Token</button>
+              <button class="secondary" onclick="showQR('${escapeJs(s.store_id)}','${escapeJs(token)}','${escapeJs(s.name || "")}')">QR Pairing</button>
+            </div>
+          </td>
+          <td>
+            <div class="actions">
+              <button class="secondary" onclick="setForm('${escapeJs(s.store_id)}','${escapeJs(s.name)}')">Edit</button>
+              ${s.enabled
+                ? `<button class="secondary" onclick="disableStore('${escapeJs(s.store_id)}')">Disable</button>`
+                : `<button class="secondary" onclick="enableStore('${escapeJs(s.store_id)}')">Enable</button>`
+              }
+              <button class="danger" onclick="deleteStore('${escapeJs(s.store_id)}')">Delete</button>
+            </div>
+          </td>
+        </tr>
       `;
-    }
-  </script>
+    }).join("");
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>store_id</th>
+            <th>name</th>
+            <th>status</th>
+            <th>device_token (soundbox)</th>
+            <th>actions</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+</script>
 </body>
 </html>
