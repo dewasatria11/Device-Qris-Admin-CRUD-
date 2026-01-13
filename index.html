@@ -3,514 +3,80 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Soundbox QRIS - Device Admin</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <title>Soundbox QRIS - Store Admin</title>
   <style>
-    :root {
-      --bg: #f6f2ea;
-      --surface: #ffffff;
-      --ink: #102322;
-      --muted: #5e6d68;
-      --primary: #0f766e;
-      --primary-strong: #0b4f46;
-      --accent: #f4a340;
-      --danger: #b91c1c;
-      --border: rgba(16, 35, 34, 0.12);
-      --shadow: 0 28px 60px -40px rgba(9, 35, 30, 0.6);
-      --radius: 16px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: "Plus Jakarta Sans", "Space Grotesk", sans-serif;
-      color: var(--ink);
-      background: radial-gradient(circle at top left, #fff6e0 0%, transparent 45%),
-                  radial-gradient(circle at bottom right, #e0f2ef 0%, transparent 50%),
-                  var(--bg);
-    }
-
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(120deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .page {
-      position: relative;
-      z-index: 1;
-      max-width: 1120px;
-      margin: 32px auto 64px;
-      padding: 0 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    h1, h3, h4 {
-      font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
-      letter-spacing: -0.02em;
-      margin: 0;
-    }
-
-    h1 {
-      font-size: clamp(2rem, 2.8vw, 2.6rem);
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-      gap: 24px;
-      padding: 28px;
-      border-radius: calc(var(--radius) + 6px);
-      background: linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(244, 163, 64, 0.12));
-      border: 1px solid rgba(15, 118, 110, 0.2);
-      box-shadow: var(--shadow);
-    }
-
-    .eyebrow {
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .lead {
-      margin: 10px 0 0;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .hero-meta {
-      padding: 20px;
-      border-radius: var(--radius);
-      background: rgba(255, 255, 255, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.6);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .meta-label {
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 0.14em;
-      color: var(--muted);
-    }
-
-    .meta-chip {
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #fff;
-      border: 1px solid rgba(16, 35, 34, 0.12);
-      font-weight: 600;
-      font-size: 13px;
-      word-break: break-all;
-    }
-
-    .meta-note {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      border-radius: var(--radius);
-      padding: 22px;
-      background: var(--surface);
-      border: 1px solid rgba(16, 35, 34, 0.1);
-      box-shadow: 0 20px 40px -36px rgba(16, 35, 34, 0.45);
-      position: relative;
-    }
-
-    .card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .muted {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 12px;
-      align-items: end;
-    }
-
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(16, 35, 34, 0.12);
-      background: #f9fbfa;
-      font-size: 14px;
-      transition: border 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: rgba(15, 118, 110, 0.55);
-      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
-      background: #fff;
-    }
-
-    button {
-      padding: 11px 16px;
-      border-radius: 12px;
-      border: 1px solid transparent;
-      background: linear-gradient(135deg, var(--primary), #14b8a6);
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      box-shadow: 0 16px 28px -24px rgba(15, 118, 110, 0.8);
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    button.secondary {
-      background: #fff;
-      color: var(--ink);
-      border: 1px solid rgba(16, 35, 34, 0.15);
-      box-shadow: none;
-    }
-
-    button.danger {
-      background: linear-gradient(135deg, #dc2626, #b91c1c);
-      border-color: transparent;
-      box-shadow: 0 16px 28px -24px rgba(185, 28, 28, 0.8);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 12px 10px;
-      border-bottom: 1px solid rgba(16, 35, 34, 0.08);
-      text-align: left;
-    }
-
-    th {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-      color: var(--muted);
-    }
-
-    tbody tr:hover {
-      background: rgba(15, 118, 110, 0.06);
-    }
-
-    .table-wrap {
-      overflow-x: auto;
-      border-radius: 12px;
-      border: 1px solid rgba(16, 35, 34, 0.08);
-    }
-
-    .pill {
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      letter-spacing: 0.04em;
-      font-weight: 600;
-      border: 1px solid rgba(16, 35, 34, 0.2);
-      display: inline-block;
-      text-transform: uppercase;
-    }
-
-    .pill.ok {
-      border-color: rgba(15, 118, 110, 0.4);
-      background: rgba(15, 118, 110, 0.1);
-      color: var(--primary);
-    }
-
-    .pill.off {
-      border-color: rgba(185, 28, 28, 0.4);
-      background: rgba(185, 28, 28, 0.1);
-      color: var(--danger);
-    }
-
-    .pill.neutral {
-      border-color: rgba(16, 35, 34, 0.2);
-      background: rgba(255, 255, 255, 0.8);
-      color: var(--muted);
-    }
-
-    .status {
-      white-space: pre-wrap;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 12px;
-      background: #0e1b1a;
-      color: #d6efe7;
-      padding: 14px;
-      border-radius: 12px;
-      min-height: 140px;
-      max-height: 240px;
-      overflow: auto;
-    }
-
-    .toast-wrap {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      display: grid;
-      gap: 10px;
-      z-index: 20;
-    }
-
-    .toast {
-      padding: 12px 16px;
-      border-radius: 12px;
-      background: #0e1b1a;
-      color: #e6f5ef;
-      font-size: 13px;
-      box-shadow: 0 18px 40px -32px rgba(9, 35, 30, 0.6);
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .toast.success {
-      background: #0f3d35;
-    }
-
-    .toast.error {
-      background: #4b1111;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: rgba(16, 24, 27, 0.45);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-      z-index: 30;
-    }
-
-    .modal.show {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal-card {
-      width: min(92vw, 420px);
-      padding: 22px;
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 30px 60px -40px rgba(9, 35, 30, 0.8);
-      border: 1px solid rgba(16, 35, 34, 0.1);
-      transform: translateY(8px) scale(0.98);
-      transition: transform 0.2s ease;
-    }
-
-    .modal.show .modal-card {
-      transform: translateY(0) scale(1);
-    }
-
-    .modal-header {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-
-    .modal-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      font-weight: 700;
-      background: rgba(15, 118, 110, 0.12);
-      color: var(--primary);
-    }
-
-    .modal.danger .modal-icon {
-      background: rgba(185, 28, 28, 0.12);
-      color: var(--danger);
-    }
-
-    .modal-actions {
-      margin-top: 18px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-
-    @media (max-width: 880px) {
-      .hero {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .page {
-        padding: 0 18px 40px;
-      }
-
-      .toast-wrap {
-        right: 18px;
-        left: 18px;
-      }
-
-      .toast {
-        width: 100%;
-      }
-    }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; max-width: 980px; }
+    h1 { margin: 0 0 12px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 14px 0; }
+    label { display:block; font-size: 12px; opacity: .75; margin-bottom: 6px; }
+    input { padding: 10px; border: 1px solid #ccc; border-radius: 10px; min-width: 240px; }
+    button { padding: 10px 12px; border: 1px solid #222; border-radius: 10px; background:#111; color:#fff; cursor:pointer; }
+    button.secondary { background:#fff; color:#111; border-color:#ccc; }
+    button.danger { background:#b00020; border-color:#b00020; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; vertical-align: top; }
+    th { font-size: 12px; opacity: .7; }
+    .muted { opacity:.7; font-size: 12px; }
+    .pill { padding: 2px 8px; border-radius: 999px; font-size: 12px; border:1px solid #ddd; display:inline-block; }
+    .ok { border-color:#2e7d32; color:#2e7d32; }
+    .off { border-color:#b00020; color:#b00020; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .status { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .tokenBox { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background:#f7f7f7; border:1px solid #eee; padding:8px; border-radius:10px; }
   </style>
 </head>
 <body>
-  <div class="page">
-    <header class="hero">
+  <h1>Store Admin (1 toko = 1 soundbox)</h1>
+  <div class="muted">Base URL: <span id="baseUrlText"></span></div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Login Admin</h3>
+    <div class="row">
       <div>
-        <div class="eyebrow">Soundbox QRIS</div>
-        <h1>Device Admin</h1>
-        <p class="lead">Kelola device QRIS secara cepat: login, upsert, enable, disable, dan hapus perangkat.</p>
+        <label>ADMIN_KEY</label>
+        <input id="adminKey" type="password" placeholder="Masukkan ADMIN_KEY" />
       </div>
-      <div class="hero-meta">
-        <div class="meta-label">Base URL</div>
-        <div class="meta-chip" id="baseUrlText"></div>
-        <div class="meta-note">Key disimpan di sessionStorage dan hilang saat tab/browser ditutup.</div>
-      </div>
-    </header>
-
-    <div class="grid">
-      <section class="card">
-        <div class="card-head">
-          <h3>Login Admin</h3>
-          <span class="pill neutral">sessionStorage</span>
-        </div>
-        <div class="row">
-          <div>
-            <label>ADMIN_KEY</label>
-            <input id="adminKey" type="password" placeholder="Masukkan ADMIN_KEY" />
-          </div>
-          <button onclick="saveKey()">Simpan Key</button>
-          <button class="secondary" onclick="clearKey()">Hapus Key</button>
-          <button class="secondary" onclick="refresh()">Refresh List</button>
-        </div>
-        <div class="muted" style="margin-top:12px">
-          Key hanya tersimpan di sesi saat ini dan tidak ditulis ke file.
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-head">
-          <h3>Tambah / Update Device</h3>
-          <span class="pill neutral">upsert</span>
-        </div>
-        <div class="row">
-          <div>
-            <label>device_id</label>
-            <input id="device_id" placeholder="soundbox-1 / kasir-depan" />
-          </div>
-          <div>
-            <label>name</label>
-            <input id="name" placeholder="Soundbox Depan" />
-          </div>
-          <div>
-            <label>type</label>
-            <select id="type">
-              <option value="soundbox">soundbox</option>
-              <option value="cashier">cashier</option>
-            </select>
-          </div>
-          <button onclick="upsertDevice()">Simpan</button>
-        </div>
-        <div class="muted" style="margin-top:12px">
-          Jika device_id sudah ada, maka akan di-update dan otomatis enabled=1.
-        </div>
-      </section>
+      <button onclick="saveKey()">Simpan Key</button>
+      <button class="secondary" onclick="clearKey()">Hapus Key</button>
+      <button class="secondary" onclick="refresh()">Refresh List</button>
     </div>
-
-    <section class="card">
-      <div class="card-head">
-        <h3>Devices</h3>
-        <div class="actions">
-          <button class="secondary" onclick="refresh()">Refresh</button>
-        </div>
-      </div>
-      <div id="tableWrap" class="table-wrap"></div>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h3>Log</h3>
-        <span class="pill neutral">activity</span>
-      </div>
-      <div id="log" class="status"></div>
-    </section>
+    <div class="muted" style="margin-top:10px">
+      Key disimpan di <b>sessionStorage</b> (hilang saat tab/browser ditutup).
+    </div>
   </div>
 
-  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-atomic="true"></div>
-
-  <div id="modal" class="modal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMessage">
-      <div class="modal-header">
-        <div class="modal-icon" id="modalIcon">i</div>
-        <div>
-          <h4 id="modalTitle">Info</h4>
-          <div class="muted" id="modalMessage"></div>
-        </div>
+  <div class="card">
+    <h3 style="margin-top:0">Tambah / Update Store (UPSERT)</h3>
+    <div class="row">
+      <div>
+        <label>store_id (unik)</label>
+        <input id="store_id" placeholder="toko-001" />
       </div>
-      <div class="modal-actions">
-        <button class="secondary" id="modalSecondary">Batal</button>
-        <button id="modalPrimary">OK</button>
+      <div>
+        <label>name</label>
+        <input id="name" placeholder="Toko Ayam" />
       </div>
+      <button onclick="upsertStore()">Simpan</button>
+      <button class="secondary" onclick="generateToken()">Generate Token Baru</button>
     </div>
+    <div class="muted" style="margin-top:10px">
+      - Tombol <b>Simpan</b>: kalau store sudah ada → update name dan token tetap (kecuali kamu isi token manual).<br/>
+      - Tombol <b>Generate Token Baru</b>: buat token baru lalu auto upsert (buat kasus soundbox hilang / ganti unit).
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Stores</h3>
+    <div class="actions" style="margin-bottom:10px">
+      <button class="secondary" onclick="refresh()">Refresh</button>
+    </div>
+    <div id="tableWrap"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Log</h3>
+    <div id="log" class="status"></div>
   </div>
 
 <script>
@@ -519,115 +85,27 @@
 
   const logEl = document.getElementById("log");
   const adminKeyInput = document.getElementById("adminKey");
-  const toastWrap = document.getElementById("toastWrap");
-
-  const modalEl = document.getElementById("modal");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalMessage = document.getElementById("modalMessage");
-  const modalPrimary = document.getElementById("modalPrimary");
-  const modalSecondary = document.getElementById("modalSecondary");
-  const modalIcon = document.getElementById("modalIcon");
 
   function log(msg) {
     logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
-  }
-
-  function toast(message, tone = "info") {
-    const el = document.createElement("div");
-    el.className = `toast ${tone}`;
-    el.textContent = message;
-    toastWrap.appendChild(el);
-    requestAnimationFrame(() => el.classList.add("show"));
-
-    setTimeout(() => {
-      el.classList.remove("show");
-      el.addEventListener("transitionend", () => el.remove(), { once: true });
-    }, 3200);
-  }
-
-  function showDialog({ title = "Info", message = "", confirmText = "OK", cancelText = null, danger = false }) {
-    return new Promise((resolve) => {
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      modalPrimary.textContent = confirmText;
-      modalSecondary.textContent = cancelText || "Batal";
-      modalSecondary.style.display = cancelText ? "inline-flex" : "none";
-      modalIcon.textContent = danger ? "!" : "i";
-      modalEl.classList.toggle("danger", danger);
-      modalPrimary.classList.toggle("danger", danger);
-
-      modalEl.classList.add("show");
-      modalEl.setAttribute("aria-hidden", "false");
-
-      const cleanup = (result) => {
-        modalEl.classList.remove("show");
-        modalEl.setAttribute("aria-hidden", "true");
-        modalPrimary.onclick = null;
-        modalSecondary.onclick = null;
-        modalEl.removeEventListener("click", onOutside);
-        window.removeEventListener("keydown", onKey);
-        resolve(result);
-      };
-
-      const onKey = (event) => {
-        if (event.key === "Escape") {
-          cleanup(false);
-        }
-      };
-
-      const onOutside = (event) => {
-        if (event.target === modalEl) {
-          cleanup(false);
-        }
-      };
-
-      modalPrimary.onclick = () => cleanup(true);
-      modalSecondary.onclick = () => cleanup(false);
-      modalEl.addEventListener("click", onOutside);
-      window.addEventListener("keydown", onKey);
-    });
-  }
-
-  function uiAlert(message, options = {}) {
-    return showDialog({
-      title: options.title || "Info",
-      message,
-      confirmText: options.confirmText || "Tutup",
-      danger: Boolean(options.danger)
-    });
-  }
-
-  function uiConfirm(message, options = {}) {
-    return showDialog({
-      title: options.title || "Konfirmasi",
-      message,
-      confirmText: options.confirmText || "Ya, lanjut",
-      cancelText: options.cancelText || "Batal",
-      danger: Boolean(options.danger)
-    });
   }
 
   function getKey() {
     return sessionStorage.getItem("ADMIN_KEY") || "";
   }
 
-  async function saveKey() {
+  function saveKey() {
     const k = adminKeyInput.value.trim();
-    if (!k) {
-      await uiAlert("Masukkan ADMIN_KEY dulu", { title: "Input belum lengkap" });
-      return;
-    }
+    if (!k) return alert("Masukkan ADMIN_KEY dulu");
     sessionStorage.setItem("ADMIN_KEY", k);
     adminKeyInput.value = "";
     log("ADMIN_KEY tersimpan di sessionStorage");
-    toast("ADMIN_KEY tersimpan", "success");
     refresh();
   }
 
   function clearKey() {
     sessionStorage.removeItem("ADMIN_KEY");
     log("ADMIN_KEY dihapus dari sessionStorage");
-    toast("ADMIN_KEY dihapus", "info");
     renderTable([]);
   }
 
@@ -635,15 +113,12 @@
     const k = getKey();
     if (!k) throw new Error("ADMIN_KEY belum diset (isi dulu di Login Admin)");
 
-    const headers = Object.assign(
-      { "x-admin-key": k },
-      opts.headers || {}
-    );
-
+    const headers = Object.assign({ "x-admin-key": k }, opts.headers || {});
     const res = await fetch(BASE_URL + path, { ...opts, headers });
-    const text = await res.text();
+    const txt = await res.text();
+
     let data;
-    try { data = JSON.parse(text); } catch { data = text; }
+    try { data = JSON.parse(txt); } catch { data = txt; }
 
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
@@ -653,124 +128,158 @@
 
   async function refresh() {
     try {
-      log("GET /admin/devices ...");
-      const data = await adminFetch("/admin/devices");
-      renderTable(data.devices || []);
-      log(`OK: loaded ${data.devices?.length || 0} devices`);
+      log("GET /admin/stores ...");
+      const data = await adminFetch("/admin/stores");
+      renderTable(data.stores || []);
+      log(`OK: loaded ${data.stores?.length || 0} stores`);
     } catch (e) {
       log(`ERR: ${e.message}`);
-      await uiAlert(e.message, { title: "Gagal memuat data", danger: true });
+      alert(e.message);
     }
   }
 
-  async function upsertDevice() {
-    const device_id = document.getElementById("device_id").value.trim();
-    const name = document.getElementById("name").value.trim();
-    const type = document.getElementById("type").value;
+  function getForm() {
+    return {
+      store_id: document.getElementById("store_id").value.trim(),
+      name: document.getElementById("name").value.trim(),
+    };
+  }
 
-    if (!device_id || !name) {
-      await uiAlert("device_id dan name wajib diisi", { title: "Input belum lengkap" });
-      return;
-    }
+  function setForm(store_id, name) {
+    document.getElementById("store_id").value = store_id || "";
+    document.getElementById("name").value = name || "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function upsertStore(extra = {}) {
+    const { store_id, name } = getForm();
+    if (!store_id || !name) return alert("store_id dan name wajib diisi");
 
     try {
-      log("POST /admin/devices (upsert) ...");
-      await adminFetch("/admin/devices", {
+      log("POST /admin/stores (upsert) ...");
+      const payload = { store_id, name, ...extra };
+      const out = await adminFetch("/admin/stores", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id, name, type })
+        body: JSON.stringify(payload),
       });
-      log(`OK: upsert ${device_id}`);
-      toast(`Berhasil simpan ${device_id}`, "success");
-      document.getElementById("device_id").value = "";
-      document.getElementById("name").value = "";
+
+      // tampilkan token hasil response (important untuk pairing soundbox)
+      log(`OK: upsert ${store_id} | token=${out.device_token}`);
+      await refresh();
+      alert(`Store tersimpan.\n\nstore_id: ${out.store_id}\nname: ${out.name}\ndevice_token: ${out.device_token}\n\nSimpan token ini untuk soundbox.`);
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      alert(e.message);
+    }
+  }
+
+  // Generate token baru: pakai prefix sb_ + random
+  function randomHex(len = 32) {
+    const arr = new Uint8Array(len / 2);
+    crypto.getRandomValues(arr);
+    return [...arr].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function generateToken() {
+    const { store_id, name } = getForm();
+    if (!store_id || !name) return alert("Isi store_id dan name dulu, baru generate token");
+
+    const newToken = "sb_" + randomHex(32);
+    await upsertStore({ device_token: newToken });
+  }
+
+  async function enableStore(store_id) {
+    try {
+      log(`POST /admin/stores/enable ${store_id} ...`);
+      await adminFetch("/admin/stores/enable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id }),
+      });
+      log(`OK: enabled ${store_id}`);
       await refresh();
     } catch (e) {
       log(`ERR: ${e.message}`);
-      await uiAlert(e.message, { title: "Gagal menyimpan", danger: true });
+      alert(e.message);
     }
   }
 
-  async function enableDevice(device_id) {
+  async function disableStore(store_id) {
     try {
-      log(`POST /admin/devices/enable ${device_id} ...`);
-      await adminFetch("/admin/devices/enable", {
+      log(`POST /admin/stores/disable ${store_id} ...`);
+      await adminFetch("/admin/stores/disable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id })
+        body: JSON.stringify({ store_id }),
       });
-      log(`OK: enabled ${device_id}`);
-      toast(`${device_id} enabled`, "success");
+      log(`OK: disabled ${store_id}`);
       await refresh();
     } catch (e) {
       log(`ERR: ${e.message}`);
-      await uiAlert(e.message, { title: "Gagal mengaktifkan", danger: true });
+      alert(e.message);
     }
   }
 
-  async function disableDevice(device_id) {
+  async function deleteStore(store_id) {
+    if (!confirm(`Hapus store ${store_id}? (permanen)`)) return;
     try {
-      log(`POST /admin/devices/disable ${device_id} ...`);
-      await adminFetch("/admin/devices/disable", {
+      log(`POST /admin/stores/delete ${store_id} ...`);
+      await adminFetch("/admin/stores/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id })
+        body: JSON.stringify({ store_id }),
       });
-      log(`OK: disabled ${device_id}`);
-      toast(`${device_id} disabled`, "info");
+      log(`OK: deleted ${store_id}`);
       await refresh();
     } catch (e) {
       log(`ERR: ${e.message}`);
-      await uiAlert(e.message, { title: "Gagal menonaktifkan", danger: true });
+      alert(e.message);
     }
   }
 
-  async function deleteDevice(device_id) {
-    const confirmed = await uiConfirm(`Hapus device ${device_id}? (permanen)`, {
-      title: "Konfirmasi hapus",
-      confirmText: "Hapus",
-      cancelText: "Batal",
-      danger: true
-    });
-    if (!confirmed) return;
-
+  async function copy(text) {
     try {
-      log(`POST /admin/devices/delete ${device_id} ...`);
-      await adminFetch("/admin/devices/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ device_id })
-      });
-      log(`OK: deleted ${device_id}`);
-      toast(`${device_id} dihapus`, "info");
-      await refresh();
-    } catch (e) {
-      log(`ERR: ${e.message}`);
-      await uiAlert(e.message, { title: "Gagal menghapus", danger: true });
+      await navigator.clipboard.writeText(text);
+      log("Copied to clipboard");
+      alert("Copied!");
+    } catch {
+      alert("Gagal copy (browser tidak mengizinkan). Copy manual ya.");
     }
   }
 
-  function renderTable(devices) {
+  function renderTable(stores) {
     const wrap = document.getElementById("tableWrap");
-    if (!devices.length) {
-      wrap.innerHTML = `<div class="muted" style="padding:12px">Tidak ada device (atau belum login admin).</div>`;
+    if (!stores.length) {
+      wrap.innerHTML = `<div class="muted">Tidak ada store (atau belum login admin).</div>`;
       return;
     }
 
-    const rows = devices.map(d => {
-      const badge = d.enabled ? `<span class="pill ok">enabled</span>` : `<span class="pill off">disabled</span>`;
+    const rows = stores.map(s => {
+      const badge = s.enabled ? `<span class="pill ok">enabled</span>` : `<span class="pill off">disabled</span>`;
+      const token = s.device_token || "";
       return `
         <tr>
-          <td><b>${escapeHtml(d.device_id)}</b><div class="muted">${escapeHtml(d.created_at || "")}</div></td>
-          <td>${escapeHtml(d.name || "")}</td>
-          <td>${escapeHtml(d.type || "")}</td>
+          <td>
+            <b>${escapeHtml(s.store_id)}</b>
+            <div class="muted">${escapeHtml(s.created_at || "")}</div>
+          </td>
+          <td>${escapeHtml(s.name || "")}</td>
           <td>${badge}</td>
           <td>
+            <div class="tokenBox">${escapeHtml(token)}</div>
+            <div class="actions" style="margin-top:8px">
+              <button class="secondary" onclick="copy('${escapeJs(token)}')">Copy Token</button>
+            </div>
+          </td>
+          <td>
             <div class="actions">
-              <button class="secondary" onclick="fillForm('${escapeJs(d.device_id)}','${escapeJs(d.name)}','${escapeJs(d.type)}')">Edit</button>
-              ${d.enabled ? `<button class="secondary" onclick="disableDevice('${escapeJs(d.device_id)}')">Disable</button>`
-                         : `<button class="secondary" onclick="enableDevice('${escapeJs(d.device_id)}')">Enable</button>`}
-              <button class="danger" onclick="deleteDevice('${escapeJs(d.device_id)}')">Delete</button>
+              <button class="secondary" onclick="setForm('${escapeJs(s.store_id)}','${escapeJs(s.name)}')">Edit</button>
+              ${s.enabled
+                ? `<button class="secondary" onclick="disableStore('${escapeJs(s.store_id)}')">Disable</button>`
+                : `<button class="secondary" onclick="enableStore('${escapeJs(s.store_id)}')">Enable</button>`
+              }
+              <button class="danger" onclick="deleteStore('${escapeJs(s.store_id)}')">Delete</button>
             </div>
           </td>
         </tr>
@@ -781,23 +290,16 @@
       <table>
         <thead>
           <tr>
-            <th>device_id</th>
+            <th>store_id</th>
             <th>name</th>
-            <th>type</th>
             <th>status</th>
+            <th>device_token (soundbox)</th>
             <th>actions</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     `;
-  }
-
-  function fillForm(device_id, name, type) {
-    document.getElementById("device_id").value = device_id;
-    document.getElementById("name").value = name;
-    document.getElementById("type").value = type || "soundbox";
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function escapeHtml(s) {
