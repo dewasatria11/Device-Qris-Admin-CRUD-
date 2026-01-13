@@ -22,9 +22,7 @@
       --radius: 16px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -49,9 +47,7 @@
       margin: 0;
     }
 
-    h1 {
-      font-size: clamp(2rem, 3vw, 2.8rem);
-    }
+    h1 { font-size: clamp(2rem, 3vw, 2.8rem); }
 
     .eyebrow {
       text-transform: uppercase;
@@ -190,9 +186,7 @@
       background: var(--primary-strong);
     }
 
-    button:active {
-      transform: translateY(0) scale(0.98);
-    }
+    button:active { transform: translateY(0) scale(0.98); }
 
     button.secondary {
       background: #fff;
@@ -227,9 +221,7 @@
       color: var(--muted);
     }
 
-    tbody tr:hover {
-      background: rgba(29, 53, 87, 0.06);
-    }
+    tbody tr:hover { background: rgba(29, 53, 87, 0.06); }
 
     .table-wrap {
       overflow-x: auto;
@@ -237,9 +229,7 @@
       border: 1px solid rgba(16, 24, 40, 0.12);
     }
 
-    .table-wrap table {
-      min-width: 720px;
-    }
+    .table-wrap table { min-width: 720px; }
 
     .muted {
       color: var(--muted);
@@ -325,13 +315,8 @@
       transform: translateY(0) scale(1);
     }
 
-    .toast.success {
-      background: #13312a;
-    }
-
-    .toast.error {
-      background: #7f1d1d;
-    }
+    .toast.success { background: #13312a; }
+    .toast.error { background: #7f1d1d; }
 
     .modal {
       position: fixed;
@@ -401,74 +386,58 @@
       gap: 8px;
     }
 
-    .page > * {
-      animation: floatIn 0.85s cubic-bezier(0.2, 0.9, 0.2, 1.2) both;
+    /* QR modal extras */
+    .qr-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 10px;
     }
+    .qr-canvas-wrap {
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(16, 24, 40, 0.12);
+      background: #f8fafc;
+    }
+    .qr-note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .modal-card.wide { width: min(94vw, 560px); }
 
+    .page > * { animation: floatIn 0.85s cubic-bezier(0.2, 0.9, 0.2, 1.2) both; }
     .page > *:nth-child(1) { animation-delay: 0.05s; }
     .page > *:nth-child(2) { animation-delay: 0.12s; }
     .page > *:nth-child(3) { animation-delay: 0.18s; }
     .page > *:nth-child(4) { animation-delay: 0.24s; }
 
-    .grid .card {
-      animation: riseIn 0.65s cubic-bezier(0.2, 0.8, 0.2, 1.1) both;
-    }
-
+    .grid .card { animation: riseIn 0.65s cubic-bezier(0.2, 0.8, 0.2, 1.1) both; }
     .grid .card:nth-child(1) { animation-delay: 0.2s; }
     .grid .card:nth-child(2) { animation-delay: 0.28s; }
 
     @keyframes floatIn {
-      0% {
-        opacity: 0;
-        transform: translateY(32px) scale(0.96);
-      }
-      70% {
-        opacity: 1;
-        transform: translateY(-6px) scale(1.02);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+      0% { opacity: 0; transform: translateY(32px) scale(0.96); }
+      70% { opacity: 1; transform: translateY(-6px) scale(1.02); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     @keyframes riseIn {
-      0% {
-        opacity: 0;
-        transform: translateY(22px) scale(0.98);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+      0% { opacity: 0; transform: translateY(22px) scale(0.98); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     @media (max-width: 880px) {
-      .hero {
-        grid-template-columns: 1fr;
-      }
+      .hero { grid-template-columns: 1fr; }
+      .modal-card.wide { width: min(94vw, 520px); }
     }
 
     @media (max-width: 600px) {
-      .page {
-        padding: 0 18px 40px;
-      }
-
-      .toast-wrap {
-        right: 18px;
-        left: 18px;
-      }
-
-      .toast {
-        width: 100%;
-      }
+      .page { padding: 0 18px 40px; }
+      .toast-wrap { right: 18px; left: 18px; }
+      .toast { width: 100%; }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      * {
-        animation: none !important;
-        transition: none !important;
-      }
+      * { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
@@ -551,6 +520,7 @@
 
   <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-atomic="true"></div>
 
+  <!-- Modal Info/Confirm -->
   <div id="modal" class="modal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMessage">
       <div class="modal-header">
@@ -567,6 +537,44 @@
     </div>
   </div>
 
+  <!-- QR Pairing Modal -->
+  <div id="qrModal" class="modal" aria-hidden="true">
+    <div class="modal-card wide" role="dialog" aria-modal="true" aria-labelledby="qrTitle" aria-describedby="qrDesc">
+      <div class="modal-header">
+        <div class="modal-icon">QR</div>
+        <div style="flex:1;">
+          <h4 id="qrTitle">QR Pairing</h4>
+          <div class="modal-message" id="qrDesc">Scan QR ini saat setup soundbox agar terset store_id + device_token.</div>
+        </div>
+      </div>
+
+      <div class="qr-grid">
+        <div class="qr-canvas-wrap">
+          <canvas id="qrCanvas" width="260" height="260" aria-label="QR Code"></canvas>
+        </div>
+
+        <div>
+          <div class="muted">Payload JSON (yang disimpan di soundbox):</div>
+          <div id="qrPayload" class="tokenBox" style="margin-top:10px;"></div>
+          <div class="actions" style="margin-top:10px;">
+            <button class="secondary" onclick="copy(document.getElementById('qrPayload').textContent)">Copy JSON</button>
+            <button class="secondary" onclick="downloadQR()">Download QR</button>
+          </div>
+          <div class="qr-note" style="margin-top:10px;">
+            Tips: tempel QR di unit soundbox atau kartu toko. Kalau soundbox hilang, klik <b>Generate Token Baru</b> lalu pairing ulang.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="secondary" onclick="closeQR()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR library (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
 <script>
   const BASE_URL = "https://server.soundboxqris123.workers.dev";
   document.getElementById("baseUrlText").textContent = BASE_URL;
@@ -581,6 +589,12 @@
   const modalPrimary = document.getElementById("modalPrimary");
   const modalSecondary = document.getElementById("modalSecondary");
   const modalIcon = document.getElementById("modalIcon");
+
+  // QR modal refs
+  const qrModalEl = document.getElementById("qrModal");
+  const qrTitleEl = document.getElementById("qrTitle");
+  const qrPayloadEl = document.getElementById("qrPayload");
+  const qrCanvas = document.getElementById("qrCanvas");
 
   function log(msg) {
     logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
@@ -624,15 +638,11 @@
       };
 
       const onKey = (event) => {
-        if (event.key === "Escape") {
-          cleanup(false);
-        }
+        if (event.key === "Escape") cleanup(false);
       };
 
       const onOutside = (event) => {
-        if (event.target === modalEl) {
-          cleanup(false);
-        }
+        if (event.target === modalEl) cleanup(false);
       };
 
       modalPrimary.onclick = () => cleanup(true);
@@ -834,9 +844,75 @@
     try {
       await navigator.clipboard.writeText(text);
       log("Copied to clipboard");
-      toast("Token tersalin", "success");
+      toast("Tersalin ke clipboard", "success");
     } catch {
       await uiAlert("Gagal copy (browser tidak mengizinkan). Copy manual ya.", { title: "Tidak bisa copy" });
+    }
+  }
+
+  // ==========================
+  // QR Pairing
+  // ==========================
+  function closeQR() {
+    qrModalEl.classList.remove("show");
+    qrModalEl.setAttribute("aria-hidden", "true");
+    qrModalEl.removeEventListener("click", onQRBackdrop);
+    window.removeEventListener("keydown", onQREsc);
+  }
+
+  function onQRBackdrop(e) {
+    if (e.target === qrModalEl) closeQR();
+  }
+  function onQREsc(e) {
+    if (e.key === "Escape") closeQR();
+  }
+
+  async function showQR(store_id, device_token, name) {
+    if (!window.QRCode) {
+      await uiAlert("Library QR belum termuat. Coba refresh halaman.", { title: "QR Error", danger: true });
+      return;
+    }
+    if (!store_id || !device_token) {
+      await uiAlert("store_id / device_token kosong. Pastikan store punya token.", { title: "QR Error", danger: true });
+      return;
+    }
+
+    const payloadObj = { store_id, device_token };
+    const payload = JSON.stringify(payloadObj);
+
+    qrTitleEl.textContent = `QR Pairing • ${name || store_id}`;
+    qrPayloadEl.textContent = payload;
+
+    // render QR to canvas
+    await QRCode.toCanvas(qrCanvas, payload, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 260
+    });
+
+    qrModalEl.classList.add("show");
+    qrModalEl.setAttribute("aria-hidden", "false");
+    qrModalEl.addEventListener("click", onQRBackdrop);
+    window.addEventListener("keydown", onQREsc);
+  }
+
+  function downloadQR() {
+    try {
+      const link = document.createElement("a");
+      const storeId = (() => {
+        try {
+          const j = JSON.parse(qrPayloadEl.textContent || "{}");
+          return j.store_id || "store";
+        } catch {
+          return "store";
+        }
+      })();
+      link.download = `pairing-${storeId}.png`;
+      link.href = qrCanvas.toDataURL("image/png");
+      link.click();
+      toast("QR diunduh", "success");
+    } catch {
+      uiAlert("Gagal download QR. Coba browser lain.", { title: "Download gagal", danger: true });
     }
   }
 
@@ -862,6 +938,7 @@
             <div class="tokenBox">${escapeHtml(token)}</div>
             <div class="actions" style="margin-top:8px">
               <button class="secondary" onclick="copy('${escapeJs(token)}')">Copy Token</button>
+              <button class="secondary" onclick="showQR('${escapeJs(s.store_id)}','${escapeJs(token)}','${escapeJs(s.name || "")}')">QR Pairing</button>
             </div>
           </td>
           <td>
