@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Soundbox QRIS - Device Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f2ea;
+      --surface: #ffffff;
+      --ink: #102322;
+      --muted: #5e6d68;
+      --primary: #0f766e;
+      --primary-strong: #0b4f46;
+      --accent: #f4a340;
+      --danger: #b91c1c;
+      --border: rgba(16, 35, 34, 0.12);
+      --shadow: 0 28px 60px -40px rgba(9, 35, 30, 0.6);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Plus Jakarta Sans", "Space Grotesk", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at top left, #fff6e0 0%, transparent 45%),
+                  radial-gradient(circle at bottom right, #e0f2ef 0%, transparent 50%),
+                  var(--bg);
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0));
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 1120px;
+      margin: 32px auto 64px;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    h1, h3, h4 {
+      font-family: "Space Grotesk", "Plus Jakarta Sans", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 2.8vw, 2.6rem);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      gap: 24px;
+      padding: 28px;
+      border-radius: calc(var(--radius) + 6px);
+      background: linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(244, 163, 64, 0.12));
+      border: 1px solid rgba(15, 118, 110, 0.2);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .lead {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-meta {
+      padding: 20px;
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .meta-label {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .meta-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid rgba(16, 35, 34, 0.12);
+      font-weight: 600;
+      font-size: 13px;
+      word-break: break-all;
+    }
+
+    .meta-note {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      border-radius: var(--radius);
+      padding: 22px;
+      background: var(--surface);
+      border: 1px solid rgba(16, 35, 34, 0.1);
+      box-shadow: 0 20px 40px -36px rgba(16, 35, 34, 0.45);
+      position: relative;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 35, 34, 0.12);
+      background: #f9fbfa;
+      font-size: 14px;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: rgba(15, 118, 110, 0.55);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+      background: #fff;
+    }
+
+    button {
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: linear-gradient(135deg, var(--primary), #14b8a6);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      box-shadow: 0 16px 28px -24px rgba(15, 118, 110, 0.8);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid rgba(16, 35, 34, 0.15);
+      box-shadow: none;
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      border-color: transparent;
+      box-shadow: 0 16px 28px -24px rgba(185, 28, 28, 0.8);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(16, 35, 34, 0.08);
+      text-align: left;
+    }
+
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    tbody tr:hover {
+      background: rgba(15, 118, 110, 0.06);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 35, 34, 0.08);
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      border: 1px solid rgba(16, 35, 34, 0.2);
+      display: inline-block;
+      text-transform: uppercase;
+    }
+
+    .pill.ok {
+      border-color: rgba(15, 118, 110, 0.4);
+      background: rgba(15, 118, 110, 0.1);
+      color: var(--primary);
+    }
+
+    .pill.off {
+      border-color: rgba(185, 28, 28, 0.4);
+      background: rgba(185, 28, 28, 0.1);
+      color: var(--danger);
+    }
+
+    .pill.neutral {
+      border-color: rgba(16, 35, 34, 0.2);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--muted);
+    }
+
+    .status {
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: #0e1b1a;
+      color: #d6efe7;
+      padding: 14px;
+      border-radius: 12px;
+      min-height: 140px;
+      max-height: 240px;
+      overflow: auto;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      display: grid;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .toast {
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #0e1b1a;
+      color: #e6f5ef;
+      font-size: 13px;
+      box-shadow: 0 18px 40px -32px rgba(9, 35, 30, 0.6);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success {
+      background: #0f3d35;
+    }
+
+    .toast.error {
+      background: #4b1111;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(16, 24, 27, 0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 30;
+    }
+
+    .modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: min(92vw, 420px);
+      padding: 22px;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 30px 60px -40px rgba(9, 35, 30, 0.8);
+      border: 1px solid rgba(16, 35, 34, 0.1);
+      transform: translateY(8px) scale(0.98);
+      transition: transform 0.2s ease;
+    }
+
+    .modal.show .modal-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .modal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      background: rgba(15, 118, 110, 0.12);
+      color: var(--primary);
+    }
+
+    .modal.danger .modal-icon {
+      background: rgba(185, 28, 28, 0.12);
+      color: var(--danger);
+    }
+
+    .modal-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    @media (max-width: 880px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 0 18px 40px;
+      }
+
+      .toast-wrap {
+        right: 18px;
+        left: 18px;
+      }
+
+      .toast {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">Soundbox QRIS</div>
+        <h1>Device Admin</h1>
+        <p class="lead">Kelola device QRIS secara cepat: login, upsert, enable, disable, dan hapus perangkat.</p>
+      </div>
+      <div class="hero-meta">
+        <div class="meta-label">Base URL</div>
+        <div class="meta-chip" id="baseUrlText"></div>
+        <div class="meta-note">Key disimpan di sessionStorage dan hilang saat tab/browser ditutup.</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head">
+          <h3>Login Admin</h3>
+          <span class="pill neutral">sessionStorage</span>
+        </div>
+        <div class="row">
+          <div>
+            <label>ADMIN_KEY</label>
+            <input id="adminKey" type="password" placeholder="Masukkan ADMIN_KEY" />
+          </div>
+          <button onclick="saveKey()">Simpan Key</button>
+          <button class="secondary" onclick="clearKey()">Hapus Key</button>
+          <button class="secondary" onclick="refresh()">Refresh List</button>
+        </div>
+        <div class="muted" style="margin-top:12px">
+          Key hanya tersimpan di sesi saat ini dan tidak ditulis ke file.
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3>Tambah / Update Device</h3>
+          <span class="pill neutral">upsert</span>
+        </div>
+        <div class="row">
+          <div>
+            <label>device_id</label>
+            <input id="device_id" placeholder="soundbox-1 / kasir-depan" />
+          </div>
+          <div>
+            <label>name</label>
+            <input id="name" placeholder="Soundbox Depan" />
+          </div>
+          <div>
+            <label>type</label>
+            <select id="type">
+              <option value="soundbox">soundbox</option>
+              <option value="cashier">cashier</option>
+            </select>
+          </div>
+          <button onclick="upsertDevice()">Simpan</button>
+        </div>
+        <div class="muted" style="margin-top:12px">
+          Jika device_id sudah ada, maka akan di-update dan otomatis enabled=1.
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <h3>Devices</h3>
+        <div class="actions">
+          <button class="secondary" onclick="refresh()">Refresh</button>
+        </div>
+      </div>
+      <div id="tableWrap" class="table-wrap"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h3>Log</h3>
+        <span class="pill neutral">activity</span>
+      </div>
+      <div id="log" class="status"></div>
+    </section>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-atomic="true"></div>
+
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMessage">
+      <div class="modal-header">
+        <div class="modal-icon" id="modalIcon">i</div>
+        <div>
+          <h4 id="modalTitle">Info</h4>
+          <div class="muted" id="modalMessage"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary" id="modalSecondary">Batal</button>
+        <button id="modalPrimary">OK</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const BASE_URL = "https://server.soundboxqris123.workers.dev";
+  document.getElementById("baseUrlText").textContent = BASE_URL;
+
+  const logEl = document.getElementById("log");
+  const adminKeyInput = document.getElementById("adminKey");
+  const toastWrap = document.getElementById("toastWrap");
+
+  const modalEl = document.getElementById("modal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalMessage = document.getElementById("modalMessage");
+  const modalPrimary = document.getElementById("modalPrimary");
+  const modalSecondary = document.getElementById("modalSecondary");
+  const modalIcon = document.getElementById("modalIcon");
+
+  function log(msg) {
+    logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
+  }
+
+  function toast(message, tone = "info") {
+    const el = document.createElement("div");
+    el.className = `toast ${tone}`;
+    el.textContent = message;
+    toastWrap.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("show"));
+
+    setTimeout(() => {
+      el.classList.remove("show");
+      el.addEventListener("transitionend", () => el.remove(), { once: true });
+    }, 3200);
+  }
+
+  function showDialog({ title = "Info", message = "", confirmText = "OK", cancelText = null, danger = false }) {
+    return new Promise((resolve) => {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modalPrimary.textContent = confirmText;
+      modalSecondary.textContent = cancelText || "Batal";
+      modalSecondary.style.display = cancelText ? "inline-flex" : "none";
+      modalIcon.textContent = danger ? "!" : "i";
+      modalEl.classList.toggle("danger", danger);
+      modalPrimary.classList.toggle("danger", danger);
+
+      modalEl.classList.add("show");
+      modalEl.setAttribute("aria-hidden", "false");
+
+      const cleanup = (result) => {
+        modalEl.classList.remove("show");
+        modalEl.setAttribute("aria-hidden", "true");
+        modalPrimary.onclick = null;
+        modalSecondary.onclick = null;
+        modalEl.removeEventListener("click", onOutside);
+        window.removeEventListener("keydown", onKey);
+        resolve(result);
+      };
+
+      const onKey = (event) => {
+        if (event.key === "Escape") {
+          cleanup(false);
+        }
+      };
+
+      const onOutside = (event) => {
+        if (event.target === modalEl) {
+          cleanup(false);
+        }
+      };
+
+      modalPrimary.onclick = () => cleanup(true);
+      modalSecondary.onclick = () => cleanup(false);
+      modalEl.addEventListener("click", onOutside);
+      window.addEventListener("keydown", onKey);
+    });
+  }
+
+  function uiAlert(message, options = {}) {
+    return showDialog({
+      title: options.title || "Info",
+      message,
+      confirmText: options.confirmText || "Tutup",
+      danger: Boolean(options.danger)
+    });
+  }
+
+  function uiConfirm(message, options = {}) {
+    return showDialog({
+      title: options.title || "Konfirmasi",
+      message,
+      confirmText: options.confirmText || "Ya, lanjut",
+      cancelText: options.cancelText || "Batal",
+      danger: Boolean(options.danger)
+    });
+  }
+
+  function getKey() {
+    return sessionStorage.getItem("ADMIN_KEY") || "";
+  }
+
+  async function saveKey() {
+    const k = adminKeyInput.value.trim();
+    if (!k) {
+      await uiAlert("Masukkan ADMIN_KEY dulu", { title: "Input belum lengkap" });
+      return;
+    }
+    sessionStorage.setItem("ADMIN_KEY", k);
+    adminKeyInput.value = "";
+    log("ADMIN_KEY tersimpan di sessionStorage");
+    toast("ADMIN_KEY tersimpan", "success");
+    refresh();
+  }
+
+  function clearKey() {
+    sessionStorage.removeItem("ADMIN_KEY");
+    log("ADMIN_KEY dihapus dari sessionStorage");
+    toast("ADMIN_KEY dihapus", "info");
+    renderTable([]);
+  }
+
+  async function adminFetch(path, opts = {}) {
+    const k = getKey();
+    if (!k) throw new Error("ADMIN_KEY belum diset (isi dulu di Login Admin)");
+
+    const headers = Object.assign(
+      { "x-admin-key": k },
+      opts.headers || {}
+    );
+
+    const res = await fetch(BASE_URL + path, { ...opts, headers });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
+    }
+    return data;
+  }
+
+  async function refresh() {
+    try {
+      log("GET /admin/devices ...");
+      const data = await adminFetch("/admin/devices");
+      renderTable(data.devices || []);
+      log(`OK: loaded ${data.devices?.length || 0} devices`);
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal memuat data", danger: true });
+    }
+  }
+
+  async function upsertDevice() {
+    const device_id = document.getElementById("device_id").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const type = document.getElementById("type").value;
+
+    if (!device_id || !name) {
+      await uiAlert("device_id dan name wajib diisi", { title: "Input belum lengkap" });
+      return;
+    }
+
+    try {
+      log("POST /admin/devices (upsert) ...");
+      await adminFetch("/admin/devices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id, name, type })
+      });
+      log(`OK: upsert ${device_id}`);
+      toast(`Berhasil simpan ${device_id}`, "success");
+      document.getElementById("device_id").value = "";
+      document.getElementById("name").value = "";
+      await refresh();
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal menyimpan", danger: true });
+    }
+  }
+
+  async function enableDevice(device_id) {
+    try {
+      log(`POST /admin/devices/enable ${device_id} ...`);
+      await adminFetch("/admin/devices/enable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id })
+      });
+      log(`OK: enabled ${device_id}`);
+      toast(`${device_id} enabled`, "success");
+      await refresh();
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal mengaktifkan", danger: true });
+    }
+  }
+
+  async function disableDevice(device_id) {
+    try {
+      log(`POST /admin/devices/disable ${device_id} ...`);
+      await adminFetch("/admin/devices/disable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id })
+      });
+      log(`OK: disabled ${device_id}`);
+      toast(`${device_id} disabled`, "info");
+      await refresh();
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal menonaktifkan", danger: true });
+    }
+  }
+
+  async function deleteDevice(device_id) {
+    const confirmed = await uiConfirm(`Hapus device ${device_id}? (permanen)`, {
+      title: "Konfirmasi hapus",
+      confirmText: "Hapus",
+      cancelText: "Batal",
+      danger: true
+    });
+    if (!confirmed) return;
+
+    try {
+      log(`POST /admin/devices/delete ${device_id} ...`);
+      await adminFetch("/admin/devices/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ device_id })
+      });
+      log(`OK: deleted ${device_id}`);
+      toast(`${device_id} dihapus`, "info");
+      await refresh();
+    } catch (e) {
+      log(`ERR: ${e.message}`);
+      await uiAlert(e.message, { title: "Gagal menghapus", danger: true });
+    }
+  }
+
+  function renderTable(devices) {
+    const wrap = document.getElementById("tableWrap");
+    if (!devices.length) {
+      wrap.innerHTML = `<div class="muted" style="padding:12px">Tidak ada device (atau belum login admin).</div>`;
+      return;
+    }
+
+    const rows = devices.map(d => {
+      const badge = d.enabled ? `<span class="pill ok">enabled</span>` : `<span class="pill off">disabled</span>`;
+      return `
+        <tr>
+          <td><b>${escapeHtml(d.device_id)}</b><div class="muted">${escapeHtml(d.created_at || "")}</div></td>
+          <td>${escapeHtml(d.name || "")}</td>
+          <td>${escapeHtml(d.type || "")}</td>
+          <td>${badge}</td>
+          <td>
+            <div class="actions">
+              <button class="secondary" onclick="fillForm('${escapeJs(d.device_id)}','${escapeJs(d.name)}','${escapeJs(d.type)}')">Edit</button>
+              ${d.enabled ? `<button class="secondary" onclick="disableDevice('${escapeJs(d.device_id)}')">Disable</button>`
+                         : `<button class="secondary" onclick="enableDevice('${escapeJs(d.device_id)}')">Enable</button>`}
+              <button class="danger" onclick="deleteDevice('${escapeJs(d.device_id)}')">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>device_id</th>
+            <th>name</th>
+            <th>type</th>
+            <th>status</th>
+            <th>actions</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function fillForm(device_id, name, type) {
+    document.getElementById("device_id").value = device_id;
+    document.getElementById("name").value = name;
+    document.getElementById("type").value = type || "soundbox";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[m]));
+  }
+  function escapeJs(s) {
+    return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  }
+</script>
+</body>
+</html>
