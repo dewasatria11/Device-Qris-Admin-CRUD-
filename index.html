@@ -4,79 +4,567 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Soundbox QRIS - Store Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; max-width: 980px; }
-    h1 { margin: 0 0 12px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 14px 0; }
-    label { display:block; font-size: 12px; opacity: .75; margin-bottom: 6px; }
-    input { padding: 10px; border: 1px solid #ccc; border-radius: 10px; min-width: 240px; }
-    button { padding: 10px 12px; border: 1px solid #222; border-radius: 10px; background:#111; color:#fff; cursor:pointer; }
-    button.secondary { background:#fff; color:#111; border-color:#ccc; }
-    button.danger { background:#b00020; border-color:#b00020; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; vertical-align: top; }
-    th { font-size: 12px; opacity: .7; }
-    .muted { opacity:.7; font-size: 12px; }
-    .pill { padding: 2px 8px; border-radius: 999px; font-size: 12px; border:1px solid #ddd; display:inline-block; }
-    .ok { border-color:#2e7d32; color:#2e7d32; }
-    .off { border-color:#b00020; color:#b00020; }
-    .actions { display:flex; gap:8px; flex-wrap:wrap; }
-    .status { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-    .tokenBox { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background:#f7f7f7; border:1px solid #eee; padding:8px; border-radius:10px; }
+    :root {
+      --bg: #f2f4f7;
+      --surface: #ffffff;
+      --ink: #101828;
+      --muted: #475467;
+      --primary: #1d3557;
+      --primary-strong: #0b1f3b;
+      --accent: #f59e0b;
+      --danger: #b42318;
+      --border: #d0d5dd;
+      --shadow: 0 24px 40px -30px rgba(16, 24, 40, 0.45);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "IBM Plex Sans Condensed", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    .page {
+      max-width: 1140px;
+      margin: 32px auto 64px;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    h1, h3, h4 {
+      font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 3vw, 2.8rem);
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      gap: 24px;
+      padding: 28px;
+      border-radius: calc(var(--radius) + 6px);
+      background: #e8edf3;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-left: 6px solid var(--primary);
+    }
+
+    .lead {
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hero-meta {
+      padding: 20px;
+      border-radius: var(--radius);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .meta-label {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    .meta-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 13px;
+      word-break: break-all;
+    }
+
+    .meta-note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      border-radius: var(--radius);
+      padding: 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px -36px rgba(16, 24, 40, 0.35);
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 14px;
+      transition: border 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: rgba(29, 53, 87, 0.55);
+      box-shadow: 0 0 0 4px rgba(29, 53, 87, 0.18);
+      background: #fff;
+      transform: translateY(-1px);
+    }
+
+    button {
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      box-shadow: 0 16px 28px -24px rgba(29, 53, 87, 0.75);
+    }
+
+    button:hover {
+      transform: translateY(-2px) scale(1.02);
+      background: var(--primary-strong);
+    }
+
+    button:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    button.danger {
+      background: var(--danger);
+      border-color: transparent;
+      box-shadow: 0 16px 28px -24px rgba(180, 35, 24, 0.7);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(16, 24, 40, 0.08);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    tbody tr:hover {
+      background: rgba(29, 53, 87, 0.06);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 24, 40, 0.12);
+    }
+
+    .table-wrap table {
+      min-width: 720px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+      border: 1px solid rgba(16, 24, 40, 0.2);
+      display: inline-block;
+      text-transform: uppercase;
+    }
+
+    .pill.ok {
+      border-color: rgba(29, 53, 87, 0.4);
+      background: rgba(29, 53, 87, 0.08);
+      color: var(--primary);
+    }
+
+    .pill.off {
+      border-color: rgba(180, 35, 24, 0.4);
+      background: rgba(180, 35, 24, 0.08);
+      color: var(--danger);
+    }
+
+    .pill.neutral {
+      border-color: rgba(16, 24, 40, 0.2);
+      background: #f8fafc;
+      color: var(--muted);
+    }
+
+    .tokenBox {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: #f8fafc;
+      border: 1px dashed rgba(16, 24, 40, 0.2);
+      padding: 10px;
+      border-radius: 12px;
+      word-break: break-all;
+    }
+
+    .status {
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: #101828;
+      color: #d0d5dd;
+      padding: 14px;
+      border-radius: 12px;
+      min-height: 140px;
+      max-height: 240px;
+      overflow: auto;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      display: grid;
+      gap: 10px;
+      z-index: 20;
+    }
+
+    .toast {
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #111827;
+      color: #f9fafb;
+      font-size: 13px;
+      box-shadow: 0 18px 40px -32px rgba(16, 24, 40, 0.6);
+      opacity: 0;
+      transform: translateY(18px) scale(0.98);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .toast.success {
+      background: #13312a;
+    }
+
+    .toast.error {
+      background: #7f1d1d;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(15, 23, 42, 0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 30;
+    }
+
+    .modal.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: min(92vw, 440px);
+      padding: 22px;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 30px 60px -40px rgba(16, 24, 40, 0.8);
+      border: 1px solid var(--border);
+      transform: translateY(16px) scale(0.92);
+      transition: transform 0.2s ease;
+    }
+
+    .modal.show .modal-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .modal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      background: rgba(29, 53, 87, 0.12);
+      color: var(--primary);
+    }
+
+    .modal.danger .modal-icon {
+      background: rgba(180, 35, 24, 0.12);
+      color: var(--danger);
+    }
+
+    .modal-message {
+      white-space: pre-line;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .modal-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .page > * {
+      animation: floatIn 0.85s cubic-bezier(0.2, 0.9, 0.2, 1.2) both;
+    }
+
+    .page > *:nth-child(1) { animation-delay: 0.05s; }
+    .page > *:nth-child(2) { animation-delay: 0.12s; }
+    .page > *:nth-child(3) { animation-delay: 0.18s; }
+    .page > *:nth-child(4) { animation-delay: 0.24s; }
+
+    .grid .card {
+      animation: riseIn 0.65s cubic-bezier(0.2, 0.8, 0.2, 1.1) both;
+    }
+
+    .grid .card:nth-child(1) { animation-delay: 0.2s; }
+    .grid .card:nth-child(2) { animation-delay: 0.28s; }
+
+    @keyframes floatIn {
+      0% {
+        opacity: 0;
+        transform: translateY(32px) scale(0.96);
+      }
+      70% {
+        opacity: 1;
+        transform: translateY(-6px) scale(1.02);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes riseIn {
+      0% {
+        opacity: 0;
+        transform: translateY(22px) scale(0.98);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-width: 880px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 0 18px 40px;
+      }
+
+      .toast-wrap {
+        right: 18px;
+        left: 18px;
+      }
+
+      .toast {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Store Admin (1 toko = 1 soundbox)</h1>
-  <div class="muted">Base URL: <span id="baseUrlText"></span></div>
-
-  <div class="card">
-    <h3 style="margin-top:0">Login Admin</h3>
-    <div class="row">
+  <div class="page">
+    <header class="hero">
       <div>
-        <label>ADMIN_KEY</label>
-        <input id="adminKey" type="password" placeholder="Masukkan ADMIN_KEY" />
+        <div class="eyebrow">Soundbox QRIS</div>
+        <h1>Store Admin</h1>
+        <p class="lead">Kelola store dan soundbox dengan cepat. Satu store terhubung ke satu device soundbox.</p>
       </div>
-      <button onclick="saveKey()">Simpan Key</button>
-      <button class="secondary" onclick="clearKey()">Hapus Key</button>
-      <button class="secondary" onclick="refresh()">Refresh List</button>
+      <div class="hero-meta">
+        <div class="meta-label">Base URL</div>
+        <div class="meta-chip" id="baseUrlText"></div>
+        <div class="meta-note">ADMIN_KEY disimpan di sessionStorage dan hilang saat tab atau browser ditutup.</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head">
+          <h3>Login Admin</h3>
+          <span class="pill neutral">sessionStorage</span>
+        </div>
+        <div class="row">
+          <div>
+            <label>ADMIN_KEY</label>
+            <input id="adminKey" type="password" placeholder="Masukkan ADMIN_KEY" />
+          </div>
+          <button onclick="saveKey()">Simpan Key</button>
+          <button class="secondary" onclick="clearKey()">Hapus Key</button>
+          <button class="secondary" onclick="refresh()">Refresh List</button>
+        </div>
+        <div class="muted" style="margin-top:12px">
+          Pastikan ADMIN_KEY benar sebelum mengambil daftar store.
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h3>Tambah / Update Store</h3>
+          <span class="pill neutral">upsert</span>
+        </div>
+        <div class="row">
+          <div>
+            <label>store_id (unik)</label>
+            <input id="store_id" placeholder="toko-001" />
+          </div>
+          <div>
+            <label>name</label>
+            <input id="name" placeholder="Toko Ayam" />
+          </div>
+          <button onclick="upsertStore()">Simpan</button>
+          <button class="secondary" onclick="generateToken()">Generate Token Baru</button>
+        </div>
+        <div class="muted" style="margin-top:12px">
+          Simpan akan update name. Generate Token Baru akan membuat token baru untuk pairing soundbox.
+        </div>
+      </section>
     </div>
-    <div class="muted" style="margin-top:10px">
-      Key disimpan di <b>sessionStorage</b> (hilang saat tab/browser ditutup).
-    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <h3>Stores</h3>
+        <div class="actions">
+          <button class="secondary" onclick="refresh()">Refresh</button>
+        </div>
+      </div>
+      <div id="tableWrap" class="table-wrap"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h3>Log</h3>
+        <span class="pill neutral">activity</span>
+      </div>
+      <div id="log" class="status"></div>
+    </section>
   </div>
 
-  <div class="card">
-    <h3 style="margin-top:0">Tambah / Update Store (UPSERT)</h3>
-    <div class="row">
-      <div>
-        <label>store_id (unik)</label>
-        <input id="store_id" placeholder="toko-001" />
-      </div>
-      <div>
-        <label>name</label>
-        <input id="name" placeholder="Toko Ayam" />
-      </div>
-      <button onclick="upsertStore()">Simpan</button>
-      <button class="secondary" onclick="generateToken()">Generate Token Baru</button>
-    </div>
-    <div class="muted" style="margin-top:10px">
-      - Tombol <b>Simpan</b>: kalau store sudah ada → update name dan token tetap (kecuali kamu isi token manual).<br/>
-      - Tombol <b>Generate Token Baru</b>: buat token baru lalu auto upsert (buat kasus soundbox hilang / ganti unit).
-    </div>
-  </div>
+  <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-atomic="true"></div>
 
-  <div class="card">
-    <h3 style="margin-top:0">Stores</h3>
-    <div class="actions" style="margin-bottom:10px">
-      <button class="secondary" onclick="refresh()">Refresh</button>
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMessage">
+      <div class="modal-header">
+        <div class="modal-icon" id="modalIcon">i</div>
+        <div>
+          <h4 id="modalTitle">Info</h4>
+          <div class="modal-message" id="modalMessage"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary" id="modalSecondary">Batal</button>
+        <button id="modalPrimary">OK</button>
+      </div>
     </div>
-    <div id="tableWrap"></div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin-top:0">Log</h3>
-    <div id="log" class="status"></div>
   </div>
 
 <script>
@@ -85,27 +573,115 @@
 
   const logEl = document.getElementById("log");
   const adminKeyInput = document.getElementById("adminKey");
+  const toastWrap = document.getElementById("toastWrap");
+
+  const modalEl = document.getElementById("modal");
+  const modalTitle = document.getElementById("modalTitle");
+  const modalMessage = document.getElementById("modalMessage");
+  const modalPrimary = document.getElementById("modalPrimary");
+  const modalSecondary = document.getElementById("modalSecondary");
+  const modalIcon = document.getElementById("modalIcon");
 
   function log(msg) {
     logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
+  }
+
+  function toast(message, tone = "info") {
+    const el = document.createElement("div");
+    el.className = `toast ${tone}`;
+    el.textContent = message;
+    toastWrap.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("show"));
+
+    setTimeout(() => {
+      el.classList.remove("show");
+      el.addEventListener("transitionend", () => el.remove(), { once: true });
+    }, 3200);
+  }
+
+  function showDialog({ title = "Info", message = "", confirmText = "OK", cancelText = null, danger = false }) {
+    return new Promise((resolve) => {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modalPrimary.textContent = confirmText;
+      modalSecondary.textContent = cancelText || "Batal";
+      modalSecondary.style.display = cancelText ? "inline-flex" : "none";
+      modalIcon.textContent = danger ? "!" : "i";
+      modalEl.classList.toggle("danger", danger);
+      modalPrimary.classList.toggle("danger", danger);
+
+      modalEl.classList.add("show");
+      modalEl.setAttribute("aria-hidden", "false");
+
+      const cleanup = (result) => {
+        modalEl.classList.remove("show");
+        modalEl.setAttribute("aria-hidden", "true");
+        modalPrimary.onclick = null;
+        modalSecondary.onclick = null;
+        modalEl.removeEventListener("click", onOutside);
+        window.removeEventListener("keydown", onKey);
+        resolve(result);
+      };
+
+      const onKey = (event) => {
+        if (event.key === "Escape") {
+          cleanup(false);
+        }
+      };
+
+      const onOutside = (event) => {
+        if (event.target === modalEl) {
+          cleanup(false);
+        }
+      };
+
+      modalPrimary.onclick = () => cleanup(true);
+      modalSecondary.onclick = () => cleanup(false);
+      modalEl.addEventListener("click", onOutside);
+      window.addEventListener("keydown", onKey);
+    });
+  }
+
+  function uiAlert(message, options = {}) {
+    return showDialog({
+      title: options.title || "Info",
+      message,
+      confirmText: options.confirmText || "Tutup",
+      danger: Boolean(options.danger)
+    });
+  }
+
+  function uiConfirm(message, options = {}) {
+    return showDialog({
+      title: options.title || "Konfirmasi",
+      message,
+      confirmText: options.confirmText || "Ya, lanjut",
+      cancelText: options.cancelText || "Batal",
+      danger: Boolean(options.danger)
+    });
   }
 
   function getKey() {
     return sessionStorage.getItem("ADMIN_KEY") || "";
   }
 
-  function saveKey() {
+  async function saveKey() {
     const k = adminKeyInput.value.trim();
-    if (!k) return alert("Masukkan ADMIN_KEY dulu");
+    if (!k) {
+      await uiAlert("Masukkan ADMIN_KEY dulu", { title: "Input belum lengkap" });
+      return;
+    }
     sessionStorage.setItem("ADMIN_KEY", k);
     adminKeyInput.value = "";
     log("ADMIN_KEY tersimpan di sessionStorage");
+    toast("ADMIN_KEY tersimpan", "success");
     refresh();
   }
 
   function clearKey() {
     sessionStorage.removeItem("ADMIN_KEY");
     log("ADMIN_KEY dihapus dari sessionStorage");
+    toast("ADMIN_KEY dihapus", "info");
     renderTable([]);
   }
 
@@ -134,7 +710,7 @@
       log(`OK: loaded ${data.stores?.length || 0} stores`);
     } catch (e) {
       log(`ERR: ${e.message}`);
-      alert(e.message);
+      await uiAlert(e.message, { title: "Gagal memuat data", danger: true });
     }
   }
 
@@ -153,7 +729,10 @@
 
   async function upsertStore(extra = {}) {
     const { store_id, name } = getForm();
-    if (!store_id || !name) return alert("store_id dan name wajib diisi");
+    if (!store_id || !name) {
+      await uiAlert("store_id dan name wajib diisi", { title: "Input belum lengkap" });
+      return;
+    }
 
     try {
       log("POST /admin/stores (upsert) ...");
@@ -164,17 +743,17 @@
         body: JSON.stringify(payload),
       });
 
-      // tampilkan token hasil response (important untuk pairing soundbox)
       log(`OK: upsert ${store_id} | token=${out.device_token}`);
       await refresh();
-      alert(`Store tersimpan.\n\nstore_id: ${out.store_id}\nname: ${out.name}\ndevice_token: ${out.device_token}\n\nSimpan token ini untuk soundbox.`);
+
+      const message = `Store tersimpan.\n\nstore_id: ${out.store_id}\nname: ${out.name}\ndevice_token: ${out.device_token}\n\nSimpan token ini untuk soundbox.`;
+      await uiAlert(message, { title: "Berhasil" });
     } catch (e) {
       log(`ERR: ${e.message}`);
-      alert(e.message);
+      await uiAlert(e.message, { title: "Gagal menyimpan", danger: true });
     }
   }
 
-  // Generate token baru: pakai prefix sb_ + random
   function randomHex(len = 32) {
     const arr = new Uint8Array(len / 2);
     crypto.getRandomValues(arr);
@@ -183,7 +762,10 @@
 
   async function generateToken() {
     const { store_id, name } = getForm();
-    if (!store_id || !name) return alert("Isi store_id dan name dulu, baru generate token");
+    if (!store_id || !name) {
+      await uiAlert("Isi store_id dan name dulu, baru generate token", { title: "Input belum lengkap" });
+      return;
+    }
 
     const newToken = "sb_" + randomHex(32);
     await upsertStore({ device_token: newToken });
@@ -198,10 +780,11 @@
         body: JSON.stringify({ store_id }),
       });
       log(`OK: enabled ${store_id}`);
+      toast(`${store_id} enabled`, "success");
       await refresh();
     } catch (e) {
       log(`ERR: ${e.message}`);
-      alert(e.message);
+      await uiAlert(e.message, { title: "Gagal mengaktifkan", danger: true });
     }
   }
 
@@ -214,15 +797,23 @@
         body: JSON.stringify({ store_id }),
       });
       log(`OK: disabled ${store_id}`);
+      toast(`${store_id} disabled`, "info");
       await refresh();
     } catch (e) {
       log(`ERR: ${e.message}`);
-      alert(e.message);
+      await uiAlert(e.message, { title: "Gagal menonaktifkan", danger: true });
     }
   }
 
   async function deleteStore(store_id) {
-    if (!confirm(`Hapus store ${store_id}? (permanen)`)) return;
+    const confirmed = await uiConfirm(`Hapus store ${store_id}? (permanen)`, {
+      title: "Konfirmasi hapus",
+      confirmText: "Hapus",
+      cancelText: "Batal",
+      danger: true
+    });
+    if (!confirmed) return;
+
     try {
       log(`POST /admin/stores/delete ${store_id} ...`);
       await adminFetch("/admin/stores/delete", {
@@ -231,10 +822,11 @@
         body: JSON.stringify({ store_id }),
       });
       log(`OK: deleted ${store_id}`);
+      toast(`${store_id} dihapus`, "info");
       await refresh();
     } catch (e) {
       log(`ERR: ${e.message}`);
-      alert(e.message);
+      await uiAlert(e.message, { title: "Gagal menghapus", danger: true });
     }
   }
 
@@ -242,16 +834,16 @@
     try {
       await navigator.clipboard.writeText(text);
       log("Copied to clipboard");
-      alert("Copied!");
+      toast("Token tersalin", "success");
     } catch {
-      alert("Gagal copy (browser tidak mengizinkan). Copy manual ya.");
+      await uiAlert("Gagal copy (browser tidak mengizinkan). Copy manual ya.", { title: "Tidak bisa copy" });
     }
   }
 
   function renderTable(stores) {
     const wrap = document.getElementById("tableWrap");
     if (!stores.length) {
-      wrap.innerHTML = `<div class="muted">Tidak ada store (atau belum login admin).</div>`;
+      wrap.innerHTML = `<div class="muted" style="padding:12px">Tidak ada store (atau belum login admin).</div>`;
       return;
     }
 
