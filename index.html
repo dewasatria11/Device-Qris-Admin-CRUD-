@@ -32,7 +32,7 @@
     .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
     .actions{display:flex;flex-wrap:wrap;gap:8px}
     label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-    input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#f8fafc;font-size:14px}
+    input,select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#f8fafc;font-size:14px}
     button{padding:11px 16px;border-radius:12px;border:1px solid transparent;background:var(--primary);color:#fff;font-weight:600;cursor:pointer;transition:.2s;box-shadow:0 16px 28px -24px rgba(29,53,87,.75)}
     button:hover{transform:translateY(-2px) scale(1.02);background:var(--primary-strong)}
     button.secondary{background:#fff;color:var(--ink);border:1px solid var(--border);box-shadow:none}
@@ -139,6 +139,44 @@
 
     <section class="card">
       <div class="card-head">
+        <h3>Transactions</h3>
+        <div class="actions">
+          <button class="secondary" onclick="refreshTransactions()">Refresh Transactions</button>
+          <button class="danger" onclick="clearTransactions()">Clear Pending for store</button>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>store_id</label>
+          <select id="txStore">
+            <option value="">All stores</option>
+          </select>
+        </div>
+        <div>
+          <label>played</label>
+          <select id="txPlayed">
+            <option value="">All</option>
+            <option value="0" selected>Pending (played=0)</option>
+            <option value="1">Played (played=1)</option>
+          </select>
+        </div>
+        <div>
+          <label>limit</label>
+          <select id="txLimit">
+            <option value="20">20</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:12px">
+        Menampilkan transaksi terbaru. Gunakan filter untuk melihat status dan store tertentu.
+      </div>
+      <div id="transactionsTableWrap" class="table-wrap" style="margin-top:14px"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
         <h3>Log</h3>
         <span class="pill neutral">activity</span>
       </div>
@@ -209,6 +247,10 @@
   const logEl = document.getElementById("log");
   const adminKeyInput = document.getElementById("adminKey");
   const toastWrap = document.getElementById("toastWrap");
+  const txStoreSelect = document.getElementById("txStore");
+  const txPlayedSelect = document.getElementById("txPlayed");
+  const txLimitSelect = document.getElementById("txLimit");
+  const txTableWrap = document.getElementById("transactionsTableWrap");
 
   const modalEl = document.getElementById("modal");
   const modalTitle = document.getElementById("modalTitle");
@@ -299,30 +341,51 @@
     log("ADMIN_KEY dihapus dari sessionStorage");
     toast("ADMIN_KEY dihapus", "info");
     renderTable([]);
+    renderTransactions([]);
+    populateStoreOptions([]);
   }
 
   async function adminFetch(path, opts = {}) {
     const k = getKey();
-    if (!k) throw new Error("ADMIN_KEY belum diset (isi dulu di Login Admin)");
+    if (!k) {
+      await uiAlert("ADMIN_KEY salah / belum diset", { title: "Unauthorized", danger: true });
+      const err = new Error("Unauthorized");
+      err.handled = true;
+      throw err;
+    }
 
     const headers = Object.assign({ "x-admin-key": k }, opts.headers || {});
     const res = await fetch(BASE_URL + path, { ...opts, headers });
     const txt = await res.text();
     let data;
     try { data = JSON.parse(txt); } catch { data = txt; }
+    if (res.status === 401) {
+      await uiAlert("ADMIN_KEY salah / belum diset", { title: "Unauthorized", danger: true });
+      const err = new Error("Unauthorized");
+      err.handled = true;
+      throw err;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
     return data;
+  }
+
+  async function handleError(e, title) {
+    log(`ERR: ${e.message}`);
+    if (e && e.handled) return;
+    await uiAlert(e.message, { title, danger: true });
   }
 
   async function refresh() {
     try {
       log("GET /admin/stores ...");
       const data = await adminFetch("/admin/stores");
-      renderTable(data.stores || []);
+      const stores = data.stores || [];
+      renderTable(stores);
+      populateStoreOptions(stores);
       log(`OK: loaded ${data.stores?.length || 0} stores`);
+      await refreshTransactions();
     } catch (e) {
-      log(`ERR: ${e.message}`);
-      await uiAlert(e.message, { title: "Gagal memuat data", danger: true });
+      await handleError(e, "Gagal memuat data");
     }
   }
 
@@ -358,8 +421,7 @@
         { title: "Berhasil" }
       );
     } catch (e) {
-      log(`ERR: ${e.message}`);
-      await uiAlert(e.message, { title: "Gagal menyimpan", danger: true });
+      await handleError(e, "Gagal menyimpan");
     }
   }
 
@@ -382,7 +444,7 @@
       await adminFetch("/admin/stores/enable", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
       toast(`${store_id} enabled`, "success");
       await refresh();
-    } catch (e) { await uiAlert(e.message, { title: "Gagal mengaktifkan", danger: true }); }
+    } catch (e) { await handleError(e, "Gagal mengaktifkan"); }
   }
 
   async function disableStore(store_id) {
@@ -391,7 +453,7 @@
       await adminFetch("/admin/stores/disable", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
       toast(`${store_id} disabled`, "info");
       await refresh();
-    } catch (e) { await uiAlert(e.message, { title: "Gagal menonaktifkan", danger: true }); }
+    } catch (e) { await handleError(e, "Gagal menonaktifkan"); }
   }
 
   async function deleteStore(store_id) {
@@ -402,7 +464,7 @@
       await adminFetch("/admin/stores/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
       toast(`${store_id} dihapus`, "info");
       await refresh();
-    } catch (e) { await uiAlert(e.message, { title: "Gagal menghapus", danger: true }); }
+    } catch (e) { await handleError(e, "Gagal menghapus"); }
   }
 
   async function copy(text) {
@@ -546,6 +608,96 @@
         <tbody>${rows}</tbody>
       </table>
     `;
+  }
+
+  function populateStoreOptions(stores) {
+    const current = txStoreSelect.value || "";
+    const options = [
+      `<option value="">All stores</option>`,
+      ...stores.map(s => `<option value="${escapeHtml(s.store_id)}">${escapeHtml(s.store_id)}</option>`)
+    ];
+    txStoreSelect.innerHTML = options.join("");
+    if (stores.some(s => s.store_id === current)) {
+      txStoreSelect.value = current;
+    }
+  }
+
+  function formatRupiah(amount) {
+    const num = Number(amount);
+    if (!Number.isFinite(num)) return "-";
+    return `Rp ${num.toLocaleString("id-ID")}`;
+  }
+
+  function renderTransactions(transactions) {
+    if (!transactions.length) {
+      txTableWrap.innerHTML = `<div class="muted" style="padding:12px">No transactions found.</div>`;
+      return;
+    }
+
+    const rows = transactions.map(t => {
+      const isPlayed = Number(t.played) === 1;
+      const playedBadge = isPlayed ? `<span class="pill ok">played</span>` : `<span class="pill off">pending</span>`;
+      return `
+        <tr>
+          <td><b>${escapeHtml(t.id)}</b></td>
+          <td>${escapeHtml(t.store_id || "")}</td>
+          <td>${formatRupiah(t.amount)}</td>
+          <td>${playedBadge}</td>
+          <td>${escapeHtml(t.created_at || "")}</td>
+        </tr>
+      `;
+    }).join("");
+
+    txTableWrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>id</th><th>store_id</th><th>amount</th><th>played</th><th>created_at</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  async function refreshTransactions() {
+    try {
+      const params = new URLSearchParams();
+      if (txStoreSelect.value) params.set("store_id", txStoreSelect.value);
+      if (txPlayedSelect.value === "0" || txPlayedSelect.value === "1") params.set("played", txPlayedSelect.value);
+      if (txLimitSelect.value) params.set("limit", txLimitSelect.value);
+
+      const query = params.toString();
+      const path = query ? `/admin/transactions?${query}` : "/admin/transactions";
+      log(`GET ${path} ...`);
+      const data = await adminFetch(path);
+      renderTransactions(data.transactions || []);
+      log(`OK: loaded ${data.transactions?.length || 0} transactions`);
+    } catch (e) {
+      await handleError(e, "Gagal memuat transaksi");
+    }
+  }
+
+  async function clearTransactions() {
+    const storeId = txStoreSelect.value;
+    if (!storeId) {
+      await uiAlert("Pilih store dulu untuk menghapus transaksi.", { title: "Store belum dipilih", danger: true });
+      return;
+    }
+    const confirmed = await uiConfirm(`Hapus semua transaksi untuk ${storeId}?`, { title: "Konfirmasi hapus", confirmText: "Hapus", cancelText: "Batal", danger: true });
+    if (!confirmed) return;
+    try {
+      log(`POST /admin/transactions/clear ${storeId} ...`);
+      const out = await adminFetch("/admin/transactions/clear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id: storeId })
+      });
+      toast(`Deleted ${out.deleted || 0} transactions`, "success");
+      await refreshTransactions();
+    } catch (e) {
+      await handleError(e, "Gagal menghapus transaksi");
+    }
   }
 
   // Auto-refresh kalau sudah ada key tersimpan
