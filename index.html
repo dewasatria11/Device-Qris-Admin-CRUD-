@@ -502,6 +502,19 @@
 
     <section class="card">
       <div class="card-head">
+        <h3>Devices Monitor</h3>
+        <div class="actions">
+          <button class="secondary" onclick="refreshDevices()">Refresh Devices</button>
+        </div>
+      </div>
+      <div id="devicesTableWrap" class="table-wrap"></div>
+      <div class="muted" style="margin-top:12px">
+        Status <strong>Online</strong> jika heartbeat < 5 menit lalu. <strong>Offline</strong> jika > 30 menit.
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
         <h3>Stores</h3>
         <div class="actions">
           <button class="secondary" onclick="refresh()">Refresh</button>
@@ -760,9 +773,76 @@
         populateStoreOptions(stores);
         log(`OK: loaded ${data.stores?.length || 0} stores`);
         await refreshTransactions();
+        await refreshDevices();
       } catch (e) {
         await handleError(e, "Gagal memuat data");
       }
+    }
+
+    async function refreshDevices() {
+      try {
+        log("GET /admin/devices ...");
+        const data = await adminFetch("/admin/devices");
+        const devices = data.devices || [];
+        renderDevicesTable(devices);
+        log(`OK: loaded ${devices.length} devices`);
+      } catch (e) {
+        console.error(e);
+        // silently fail or log to UI if needed, but main flow shouldn't break
+      }
+    }
+
+    function renderDevicesTable(devices) {
+      const wrap = document.getElementById("devicesTableWrap");
+      if (devices.length === 0) {
+        wrap.innerHTML = `<div class="muted" style="padding:16px; text-align:center">Belum ada data device heartbeat.</div>`;
+        return;
+      }
+
+      let html = `<table>
+        <thead>
+          <tr>
+            <th>Store</th>
+            <th>Firmware</th>
+            <th>IP Address</th>
+            <th>Last Seen</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      html += devices.map(d => {
+        const lastSeenDate = new Date(d.last_seen);
+        const minsAgo = Math.floor((Date.now() - lastSeenDate.getTime()) / 60000);
+
+        let statusPill = "Unknown";
+        if (minsAgo < 5) {
+          statusPill = `<span class="pill ok">Online</span>`;
+        } else if (minsAgo > 30) {
+          statusPill = `<span class="pill off">Offline</span>`;
+        } else {
+          statusPill = `<span class="pill neutral">Idle (${minsAgo}m)</span>`;
+        }
+
+        const timeStr = isNaN(minsAgo) ? "-" : `${minsAgo} menit lalu`;
+
+        return `<tr>
+          <td>
+            <strong>${d.name || "(No Name)"}</strong><br/>
+            <span class="muted" style="font-size:11px">${d.store_id}</span>
+          </td>
+          <td>${d.firmware_version || "-"}</td>
+          <td>${d.ip_address || "-"}</td>
+          <td>
+            ${timeStr}<br/>
+            <span class="muted" style="font-size:11px">${lastSeenDate.toLocaleString()}</span>
+          </td>
+          <td>${statusPill}</td>
+        </tr>`;
+      }).join("");
+
+      html += `</tbody></table>`;
+      wrap.innerHTML = html;
     }
 
     function getForm() {

@@ -139,10 +139,55 @@ async function handleAdmin(request, env, url) {
     return jsonResponse({ ok: true, deleted: result.meta && result.meta.changes ? result.meta.changes : 0 });
   }
 
+  if (pathname === "/admin/devices" && request.method === "GET") {
+    const result = await env.DB.prepare(`
+      SELECT s.store_id, s.name, s.device_token, 
+             d.last_seen, d.ip_address, d.firmware_version
+      FROM stores s
+      LEFT JOIN device_heartbeat d ON s.device_token = d.device_token
+      ORDER BY d.last_seen DESC
+    `).all();
+    return jsonResponse({ ok: true, devices: result.results || [] });
+  }
+
   return textResponse("Not found", 404);
 }
 
+async function sendAlert(storeName, minutesOffline) {
+  // Placeholder for real alert logic (Telegram/WhatsApp/Email)
+  console.log(`[ALERT] Store '${storeName}' offline for ${minutesOffline} mins.`);
+  // Example: await fetch('https://api.telegram.org/botTOKEN/sendMessage', { ... })
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    // Check for devices offline > 30 mins
+    try {
+      const thresholdMinutes = 30;
+      const offlineDevices = await env.DB.prepare(`
+        SELECT s.name, s.store_id, d.last_seen
+        FROM stores s
+        JOIN device_heartbeat d ON s.device_token = d.device_token
+        WHERE s.enabled = 1 
+          AND d.last_seen < datetime('now', '-' || ? || ' minutes')
+          AND d.last_seen > datetime('now', '-24 hours') -- Avoid alerting for long dead devices continuously
+      `).bind(thresholdMinutes).all();
+
+      const devices = offlineDevices.results || [];
+      for (const dev of devices) {
+        // Calculate approx minutes offline
+        const lastSeen = new Date(dev.last_seen).getTime();
+        const now = Date.now();
+        const diffMins = Math.floor((now - lastSeen) / 60000);
+
+        ctx.waitUntil(sendAlert(dev.name, diffMins));
+      }
+      console.log(`Scheduled check done. Found ${devices.length} offline devices.`);
+    } catch (e) {
+      console.error("Scheduled task error:", e);
+    }
+  },
+
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders });
