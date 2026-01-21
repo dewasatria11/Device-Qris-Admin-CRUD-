@@ -1,76 +1,449 @@
 <!doctype html>
 <html lang="id">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Soundbox QRIS - Store Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&display=swap"
+    rel="stylesheet" />
   <style>
-    :root{
-      --bg:#f2f4f7;--surface:#fff;--ink:#101828;--muted:#475467;
-      --primary:#1d3557;--primary-strong:#0b1f3b;--danger:#b42318;
-      --border:#d0d5dd;--shadow:0 24px 40px -30px rgba(16,24,40,.45);
-      --radius:16px;
+    :root {
+      --bg: #f2f4f7;
+      --surface: #fff;
+      --ink: #101828;
+      --muted: #475467;
+      --primary: #1d3557;
+      --primary-strong: #0b1f3b;
+      --danger: #b42318;
+      --border: #d0d5dd;
+      --shadow: 0 24px 40px -30px rgba(16, 24, 40, .45);
+      --radius: 16px;
     }
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;font-family:"IBM Plex Sans","IBM Plex Sans Condensed",sans-serif;color:var(--ink);background:var(--bg)}
-    .page{max-width:1140px;margin:32px auto 64px;padding:0 24px;display:flex;flex-direction:column;gap:24px}
-    h1,h3,h4{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif;letter-spacing:-.02em;margin:0}
-    h1{font-size:clamp(2rem,3vw,2.8rem)}
-    .eyebrow{text-transform:uppercase;letter-spacing:.2em;font-size:11px;color:var(--muted);margin-bottom:10px}
-    .hero{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:24px;padding:28px;border-radius:calc(var(--radius) + 6px);background:#e8edf3;border:1px solid var(--border);box-shadow:var(--shadow);border-left:6px solid var(--primary)}
-    .lead{margin:12px 0 0;color:var(--muted);line-height:1.6}
-    .hero-meta{padding:20px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;gap:12px;justify-content:center}
-    .meta-label{text-transform:uppercase;font-size:11px;letter-spacing:.16em;color:var(--muted)}
-    .meta-chip{padding:8px 12px;border-radius:999px;background:#f8fafc;border:1px solid var(--border);font-weight:600;font-size:13px;word-break:break-all}
-    .meta-note{font-size:12px;color:var(--muted);line-height:1.5}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-    .card{border-radius:var(--radius);padding:22px;background:var(--surface);border:1px solid var(--border);box-shadow:0 20px 40px -36px rgba(16,24,40,.35)}
-    .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
-    .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end}
-    .actions{display:flex;flex-wrap:wrap;gap:8px}
-    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-    input,select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#f8fafc;font-size:14px}
-    button{padding:11px 16px;border-radius:12px;border:1px solid transparent;background:var(--primary);color:#fff;font-weight:600;cursor:pointer;transition:.2s;box-shadow:0 16px 28px -24px rgba(29,53,87,.75)}
-    button:hover{transform:translateY(-2px) scale(1.02);background:var(--primary-strong)}
-    button.secondary{background:#fff;color:var(--ink);border:1px solid var(--border);box-shadow:none}
-    button.danger{background:var(--danger);border-color:transparent}
-    .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid rgba(16,24,40,.12)}
-    table{width:100%;border-collapse:collapse;font-size:14px;min-width:720px}
-    th,td{padding:12px 10px;border-bottom:1px solid rgba(16,24,40,.08);text-align:left;vertical-align:top}
-    th{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
-    tbody tr:hover{background:rgba(29,53,87,.06)}
-    .muted{color:var(--muted);font-size:12px;line-height:1.5}
-    .pill{padding:4px 10px;border-radius:999px;font-size:11px;letter-spacing:.04em;font-weight:600;border:1px solid rgba(16,24,40,.2);display:inline-block;text-transform:uppercase}
-    .pill.ok{border-color:rgba(29,53,87,.4);background:rgba(29,53,87,.08);color:var(--primary)}
-    .pill.off{border-color:rgba(180,35,24,.4);background:rgba(180,35,24,.08);color:var(--danger)}
-    .pill.neutral{border-color:rgba(16,24,40,.2);background:#f8fafc;color:var(--muted)}
-    .tokenBox{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#f8fafc;border:1px dashed rgba(16,24,40,.2);padding:10px;border-radius:12px;word-break:break-all}
-    .status{white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#101828;color:#d0d5dd;padding:14px;border-radius:12px;min-height:140px;max-height:240px;overflow:auto}
-    .toast-wrap{position:fixed;right:24px;bottom:24px;display:grid;gap:10px;z-index:20}
-    .toast{padding:12px 16px;border-radius:12px;background:#111827;color:#f9fafb;font-size:13px;box-shadow:0 18px 40px -32px rgba(16,24,40,.6);opacity:0;transform:translateY(18px) scale(.98);transition:.2s}
-    .toast.show{opacity:1;transform:translateY(0) scale(1)}
-    .toast.success{background:#13312a}
-    .toast.error{background:#7f1d1d}
-    .modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,23,42,.55);opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
-    .modal.show{opacity:1;pointer-events:auto}
-    .modal-card{width:min(92vw,440px);padding:22px;border-radius:18px;background:#fff;box-shadow:0 30px 60px -40px rgba(16,24,40,.8);border:1px solid var(--border);transform:translateY(16px) scale(.92);transition:transform .2s}
-    .modal.show .modal-card{transform:translateY(0) scale(1)}
-    .modal-header{display:flex;gap:12px;align-items:center;margin-bottom:14px}
-    .modal-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;background:rgba(29,53,87,.12);color:var(--primary)}
-    .modal-message{white-space:pre-line;font-size:14px;color:var(--muted)}
-    .modal-actions{margin-top:18px;display:flex;justify-content:flex-end;gap:8px}
-    .modal-card.wide{width:min(94vw,560px)}
-    .qr-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:10px}
-    .qr-canvas-wrap{display:grid;place-items:center;padding:14px;border-radius:16px;border:1px solid rgba(16,24,40,.12);background:#f8fafc}
-    .qr-note{font-size:12px;color:var(--muted);line-height:1.5}
-    .qr-status{margin-top:10px;font-size:12px;color:var(--muted)}
-    @media (max-width:880px){.hero{grid-template-columns:1fr}.modal-card.wide{width:min(94vw,520px)}}
-    @media (max-width:600px){.page{padding:0 18px 40px}.toast-wrap{right:18px;left:18px}.toast{width:100%}}
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", "IBM Plex Sans Condensed", sans-serif;
+      color: var(--ink);
+      background: var(--bg)
+    }
+
+    .page {
+      max-width: 1140px;
+      margin: 32px auto 64px;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px
+    }
+
+    h1,
+    h3,
+    h4 {
+      font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+      letter-spacing: -.02em;
+      margin: 0
+    }
+
+    h1 {
+      font-size: clamp(2rem, 3vw, 2.8rem)
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: .2em;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      gap: 24px;
+      padding: 28px;
+      border-radius: calc(var(--radius) + 6px);
+      background: #e8edf3;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-left: 6px solid var(--primary)
+    }
+
+    .lead {
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.6
+    }
+
+    .hero-meta {
+      padding: 20px;
+      border-radius: var(--radius);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      justify-content: center
+    }
+
+    .meta-label {
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: .16em;
+      color: var(--muted)
+    }
+
+    .meta-chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 13px;
+      word-break: break-all
+    }
+
+    .meta-note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px
+    }
+
+    .card {
+      border-radius: var(--radius);
+      padding: 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px -36px rgba(16, 24, 40, .35)
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      align-items: end
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      font-size: 14px
+    }
+
+    button {
+      padding: 11px 16px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .2s;
+      box-shadow: 0 16px 28px -24px rgba(29, 53, 87, .75)
+    }
+
+    button:hover {
+      transform: translateY(-2px) scale(1.02);
+      background: var(--primary-strong)
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      box-shadow: none
+    }
+
+    button.danger {
+      background: var(--danger);
+      border-color: transparent
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(16, 24, 40, .12)
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 720px
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(16, 24, 40, .08);
+      text-align: left;
+      vertical-align: top
+    }
+
+    th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--muted)
+    }
+
+    tbody tr:hover {
+      background: rgba(29, 53, 87, .06)
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      letter-spacing: .04em;
+      font-weight: 600;
+      border: 1px solid rgba(16, 24, 40, .2);
+      display: inline-block;
+      text-transform: uppercase
+    }
+
+    .pill.ok {
+      border-color: rgba(29, 53, 87, .4);
+      background: rgba(29, 53, 87, .08);
+      color: var(--primary)
+    }
+
+    .pill.off {
+      border-color: rgba(180, 35, 24, .4);
+      background: rgba(180, 35, 24, .08);
+      color: var(--danger)
+    }
+
+    .pill.neutral {
+      border-color: rgba(16, 24, 40, .2);
+      background: #f8fafc;
+      color: var(--muted)
+    }
+
+    .tokenBox {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: #f8fafc;
+      border: 1px dashed rgba(16, 24, 40, .2);
+      padding: 10px;
+      border-radius: 12px;
+      word-break: break-all
+    }
+
+    .status {
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      background: #101828;
+      color: #d0d5dd;
+      padding: 14px;
+      border-radius: 12px;
+      min-height: 140px;
+      max-height: 240px;
+      overflow: auto
+    }
+
+    .toast-wrap {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      display: grid;
+      gap: 10px;
+      z-index: 20
+    }
+
+    .toast {
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #111827;
+      color: #f9fafb;
+      font-size: 13px;
+      box-shadow: 0 18px 40px -32px rgba(16, 24, 40, .6);
+      opacity: 0;
+      transform: translateY(18px) scale(.98);
+      transition: .2s
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0) scale(1)
+    }
+
+    .toast.success {
+      background: #13312a
+    }
+
+    .toast.error {
+      background: #7f1d1d
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(15, 23, 42, .55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+      z-index: 30
+    }
+
+    .modal.show {
+      opacity: 1;
+      pointer-events: auto
+    }
+
+    .modal-card {
+      width: min(92vw, 440px);
+      padding: 22px;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 30px 60px -40px rgba(16, 24, 40, .8);
+      border: 1px solid var(--border);
+      transform: translateY(16px) scale(.92);
+      transition: transform .2s
+    }
+
+    .modal.show .modal-card {
+      transform: translateY(0) scale(1)
+    }
+
+    .modal-header {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px
+    }
+
+    .modal-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      background: rgba(29, 53, 87, .12);
+      color: var(--primary)
+    }
+
+    .modal-message {
+      white-space: pre-line;
+      font-size: 14px;
+      color: var(--muted)
+    }
+
+    .modal-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px
+    }
+
+    .modal-card.wide {
+      width: min(94vw, 560px)
+    }
+
+    .qr-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 10px
+    }
+
+    .qr-canvas-wrap {
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(16, 24, 40, .12);
+      background: #f8fafc
+    }
+
+    .qr-note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    .qr-status {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    @media (max-width:880px) {
+      .hero {
+        grid-template-columns: 1fr
+      }
+
+      .modal-card.wide {
+        width: min(94vw, 520px)
+      }
+    }
+
+    @media (max-width:600px) {
+      .page {
+        padding: 0 18px 40px
+      }
+
+      .toast-wrap {
+        right: 18px;
+        left: 18px
+      }
+
+      .toast {
+        width: 100%
+      }
+    }
   </style>
 </head>
+
 <body>
   <div class="page">
     <header class="hero">
@@ -188,7 +561,8 @@
 
   <!-- Modal Info/Confirm -->
   <div id="modal" class="modal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalMessage">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle"
+      aria-describedby="modalMessage">
       <div class="modal-header">
         <div class="modal-icon" id="modalIcon">i</div>
         <div>
@@ -210,26 +584,28 @@
         <div class="modal-icon">QR</div>
         <div style="flex:1;">
           <h4 id="qrTitle">QR Pairing</h4>
-          <div class="modal-message" id="qrDesc">Scan QR ini saat setup soundbox agar terset store_id + device_token.</div>
+          <div class="modal-message" id="qrDesc">Scan QR ini saat setup soundbox untuk pairing otomatis.</div>
         </div>
       </div>
 
       <div class="qr-grid">
         <div class="qr-canvas-wrap">
           <img id="qrImg" width="260" height="260" alt="QR Code"
-               style="border-radius:12px; background:#fff; border:1px solid rgba(16,24,40,0.12);" />
+            style="border-radius:12px; background:#fff; border:1px solid rgba(16,24,40,0.12);" />
           <div class="qr-status" id="qrStatus">—</div>
         </div>
 
         <div>
-          <div class="muted">Payload JSON (yang disimpan di soundbox):</div>
+          <div class="muted">URL Pairing (yang akan di-scan soundbox):</div>
           <div id="qrPayload" class="tokenBox" style="margin-top:10px;"></div>
           <div class="actions" style="margin-top:10px;">
-            <button class="secondary" onclick="copy(document.getElementById('qrPayload').textContent)">Copy JSON</button>
+            <button class="secondary" onclick="copy(document.getElementById('qrPayload').textContent)">Copy
+              URL</button>
             <button class="secondary" onclick="downloadQR()">Download QR</button>
           </div>
           <div class="qr-note" style="margin-top:10px;">
-            Tips: tempel QR di unit soundbox atau kartu toko. Kalau soundbox hilang, klik <b>Generate Token Baru</b> lalu pairing ulang.
+            Tips: tempel QR di unit soundbox atau kartu toko. Kalau soundbox hilang, klik <b>Generate Token Baru</b>
+            lalu pairing ulang.
           </div>
         </div>
       </div>
@@ -240,340 +616,347 @@
     </div>
   </div>
 
-<script>
-  const BASE_URL = "https://server.soundboxqris123.workers.dev";
-  document.getElementById("baseUrlText").textContent = BASE_URL;
+  <script>
+    const BASE_URL = "https://server.soundboxqris123.workers.dev";
+    document.getElementById("baseUrlText").textContent = BASE_URL;
 
-  const logEl = document.getElementById("log");
-  const adminKeyInput = document.getElementById("adminKey");
-  const toastWrap = document.getElementById("toastWrap");
-  const txStoreSelect = document.getElementById("txStore");
-  const txPlayedSelect = document.getElementById("txPlayed");
-  const txLimitSelect = document.getElementById("txLimit");
-  const txTableWrap = document.getElementById("transactionsTableWrap");
+    const logEl = document.getElementById("log");
+    const adminKeyInput = document.getElementById("adminKey");
+    const toastWrap = document.getElementById("toastWrap");
+    const txStoreSelect = document.getElementById("txStore");
+    const txPlayedSelect = document.getElementById("txPlayed");
+    const txLimitSelect = document.getElementById("txLimit");
+    const txTableWrap = document.getElementById("transactionsTableWrap");
 
-  const modalEl = document.getElementById("modal");
-  const modalTitle = document.getElementById("modalTitle");
-  const modalMessage = document.getElementById("modalMessage");
-  const modalPrimary = document.getElementById("modalPrimary");
-  const modalSecondary = document.getElementById("modalSecondary");
-  const modalIcon = document.getElementById("modalIcon");
+    const modalEl = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalMessage = document.getElementById("modalMessage");
+    const modalPrimary = document.getElementById("modalPrimary");
+    const modalSecondary = document.getElementById("modalSecondary");
+    const modalIcon = document.getElementById("modalIcon");
 
-  // QR refs
-  const qrModalEl = document.getElementById("qrModal");
-  const qrTitleEl = document.getElementById("qrTitle");
-  const qrPayloadEl = document.getElementById("qrPayload");
-  const qrImg = document.getElementById("qrImg");
-  const qrStatus = document.getElementById("qrStatus");
+    // QR refs
+    const qrModalEl = document.getElementById("qrModal");
+    const qrTitleEl = document.getElementById("qrTitle");
+    const qrPayloadEl = document.getElementById("qrPayload");
+    const qrImg = document.getElementById("qrImg");
+    const qrStatus = document.getElementById("qrStatus");
 
-  function log(msg) {
-    logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
-  }
+    function log(msg) {
+      logEl.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + logEl.textContent;
+    }
 
-  function toast(message, tone = "info") {
-    const el = document.createElement("div");
-    el.className = `toast ${tone}`;
-    el.textContent = message;
-    toastWrap.appendChild(el);
-    requestAnimationFrame(() => el.classList.add("show"));
-    setTimeout(() => {
-      el.classList.remove("show");
-      el.addEventListener("transitionend", () => el.remove(), { once: true });
-    }, 3200);
-  }
+    function toast(message, tone = "info") {
+      const el = document.createElement("div");
+      el.className = `toast ${tone}`;
+      el.textContent = message;
+      toastWrap.appendChild(el);
+      requestAnimationFrame(() => el.classList.add("show"));
+      setTimeout(() => {
+        el.classList.remove("show");
+        el.addEventListener("transitionend", () => el.remove(), { once: true });
+      }, 3200);
+    }
 
-  function showDialog({ title = "Info", message = "", confirmText = "OK", cancelText = null, danger = false }) {
-    return new Promise((resolve) => {
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      modalPrimary.textContent = confirmText;
-      modalSecondary.textContent = cancelText || "Batal";
-      modalSecondary.style.display = cancelText ? "inline-flex" : "none";
-      modalIcon.textContent = danger ? "!" : "i";
-      modalEl.classList.toggle("danger", danger);
-      modalPrimary.classList.toggle("danger", danger);
+    function showDialog({ title = "Info", message = "", confirmText = "OK", cancelText = null, danger = false }) {
+      return new Promise((resolve) => {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        modalPrimary.textContent = confirmText;
+        modalSecondary.textContent = cancelText || "Batal";
+        modalSecondary.style.display = cancelText ? "inline-flex" : "none";
+        modalIcon.textContent = danger ? "!" : "i";
+        modalEl.classList.toggle("danger", danger);
+        modalPrimary.classList.toggle("danger", danger);
 
-      modalEl.classList.add("show");
-      modalEl.setAttribute("aria-hidden", "false");
+        modalEl.classList.add("show");
+        modalEl.setAttribute("aria-hidden", "false");
 
-      const cleanup = (result) => {
-        modalEl.classList.remove("show");
-        modalEl.setAttribute("aria-hidden", "true");
-        modalPrimary.onclick = null;
-        modalSecondary.onclick = null;
-        modalEl.removeEventListener("click", onOutside);
-        window.removeEventListener("keydown", onKey);
-        resolve(result);
+        const cleanup = (result) => {
+          modalEl.classList.remove("show");
+          modalEl.setAttribute("aria-hidden", "true");
+          modalPrimary.onclick = null;
+          modalSecondary.onclick = null;
+          modalEl.removeEventListener("click", onOutside);
+          window.removeEventListener("keydown", onKey);
+          resolve(result);
+        };
+
+        const onKey = (event) => { if (event.key === "Escape") cleanup(false); };
+        const onOutside = (event) => { if (event.target === modalEl) cleanup(false); };
+
+        modalPrimary.onclick = () => cleanup(true);
+        modalSecondary.onclick = () => cleanup(false);
+        modalEl.addEventListener("click", onOutside);
+        window.addEventListener("keydown", onKey);
+      });
+    }
+
+    function uiAlert(message, options = {}) {
+      return showDialog({ title: options.title || "Info", message, confirmText: options.confirmText || "Tutup", danger: Boolean(options.danger) });
+    }
+
+    function uiConfirm(message, options = {}) {
+      return showDialog({ title: options.title || "Konfirmasi", message, confirmText: options.confirmText || "Ya, lanjut", cancelText: options.cancelText || "Batal", danger: Boolean(options.danger) });
+    }
+
+    function getKey() { return sessionStorage.getItem("ADMIN_KEY") || ""; }
+
+    async function saveKey() {
+      const k = adminKeyInput.value.trim();
+      if (!k) { await uiAlert("Masukkan ADMIN_KEY dulu", { title: "Input belum lengkap" }); return; }
+      sessionStorage.setItem("ADMIN_KEY", k);
+      adminKeyInput.value = "";
+      log("ADMIN_KEY tersimpan di sessionStorage");
+      toast("ADMIN_KEY tersimpan", "success");
+      refresh();
+    }
+
+    function clearKey() {
+      sessionStorage.removeItem("ADMIN_KEY");
+      log("ADMIN_KEY dihapus dari sessionStorage");
+      toast("ADMIN_KEY dihapus", "info");
+      renderTable([]);
+      renderTransactions([]);
+      populateStoreOptions([]);
+    }
+
+    async function adminFetch(path, opts = {}) {
+      const k = getKey();
+      if (!k) {
+        await uiAlert("ADMIN_KEY salah / belum diset", { title: "Unauthorized", danger: true });
+        const err = new Error("Unauthorized");
+        err.handled = true;
+        throw err;
+      }
+
+      const headers = Object.assign({ "x-admin-key": k }, opts.headers || {});
+      const res = await fetch(BASE_URL + path, { ...opts, headers });
+      const txt = await res.text();
+      let data;
+      try { data = JSON.parse(txt); } catch { data = txt; }
+      if (res.status === 401) {
+        await uiAlert("ADMIN_KEY salah / belum diset", { title: "Unauthorized", danger: true });
+        const err = new Error("Unauthorized");
+        err.handled = true;
+        throw err;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
+      return data;
+    }
+
+    async function handleError(e, title) {
+      log(`ERR: ${e.message}`);
+      if (e && e.handled) return;
+      await uiAlert(e.message, { title, danger: true });
+    }
+
+    async function refresh() {
+      try {
+        log("GET /admin/stores ...");
+        const data = await adminFetch("/admin/stores");
+        const stores = data.stores || [];
+        renderTable(stores);
+        populateStoreOptions(stores);
+        log(`OK: loaded ${data.stores?.length || 0} stores`);
+        await refreshTransactions();
+      } catch (e) {
+        await handleError(e, "Gagal memuat data");
+      }
+    }
+
+    function getForm() {
+      return {
+        store_id: document.getElementById("store_id").value.trim(),
+        name: document.getElementById("name").value.trim(),
+      };
+    }
+
+    function setForm(store_id, name) {
+      document.getElementById("store_id").value = store_id || "";
+      document.getElementById("name").value = name || "";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function upsertStore(extra = {}) {
+      const { store_id, name } = getForm();
+      if (!store_id || !name) { await uiAlert("store_id dan name wajib diisi", { title: "Input belum lengkap" }); return; }
+
+      try {
+        log("POST /admin/stores (upsert) ...");
+        const payload = { store_id, name, ...extra };
+        const out = await adminFetch("/admin/stores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        log(`OK: upsert ${store_id} | token=${out.device_token}`);
+        await refresh();
+        await uiAlert(
+          `Store tersimpan.\n\nstore_id: ${out.store_id}\nname: ${out.name}\ndevice_token: ${out.device_token}\n\nSimpan token ini untuk soundbox.`,
+          { title: "Berhasil" }
+        );
+      } catch (e) {
+        await handleError(e, "Gagal menyimpan");
+      }
+    }
+
+    function randomHex(len = 32) {
+      const arr = new Uint8Array(len / 2);
+      crypto.getRandomValues(arr);
+      return [...arr].map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function generateToken() {
+      const { store_id, name } = getForm();
+      if (!store_id || !name) { await uiAlert("Isi store_id dan name dulu, baru generate token", { title: "Input belum lengkap" }); return; }
+      const newToken = "sb_" + randomHex(32);
+      await upsertStore({ device_token: newToken });
+    }
+
+    async function enableStore(store_id) {
+      try {
+        log(`POST /admin/stores/enable ${store_id} ...`);
+        await adminFetch("/admin/stores/enable", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
+        toast(`${store_id} enabled`, "success");
+        await refresh();
+      } catch (e) { await handleError(e, "Gagal mengaktifkan"); }
+    }
+
+    async function disableStore(store_id) {
+      try {
+        log(`POST /admin/stores/disable ${store_id} ...`);
+        await adminFetch("/admin/stores/disable", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
+        toast(`${store_id} disabled`, "info");
+        await refresh();
+      } catch (e) { await handleError(e, "Gagal menonaktifkan"); }
+    }
+
+    async function deleteStore(store_id) {
+      const confirmed = await uiConfirm(`Hapus store ${store_id}? (permanen)`, { title: "Konfirmasi hapus", confirmText: "Hapus", cancelText: "Batal", danger: true });
+      if (!confirmed) return;
+      try {
+        log(`POST /admin/stores/delete ${store_id} ...`);
+        await adminFetch("/admin/stores/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
+        toast(`${store_id} dihapus`, "info");
+        await refresh();
+      } catch (e) { await handleError(e, "Gagal menghapus"); }
+    }
+
+    async function copy(text) {
+      try { await navigator.clipboard.writeText(text); toast("Tersalin ke clipboard", "success"); }
+      catch { await uiAlert("Gagal copy (browser tidak mengizinkan). Copy manual ya.", { title: "Tidak bisa copy" }); }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+    }
+    function escapeJs(s) { return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
+
+    // ==========================
+    // QR Pairing (IMG + fallback providers)
+    // ==========================
+    function closeQR() {
+      qrModalEl.classList.remove("show");
+      qrModalEl.setAttribute("aria-hidden", "true");
+      qrModalEl.removeEventListener("click", onQRBackdrop);
+      window.removeEventListener("keydown", onQREsc);
+    }
+    function onQRBackdrop(e) { if (e.target === qrModalEl) closeQR(); }
+    function onQREsc(e) { if (e.key === "Escape") closeQR(); }
+
+    function buildQrUrls(payload) {
+      // Provider 1: Google Chart
+      const u1 = "https://chart.googleapis.com/chart"
+        + "?cht=qr&chs=260x260&chld=M|2&chl=" + encodeURIComponent(payload);
+
+      // Provider 2: QuickChart (biasanya tembus kalau google keblok)
+      const u2 = "https://quickchart.io/qr"
+        + "?size=260&margin=2&ecLevel=M&text=" + encodeURIComponent(payload);
+
+      return [u1, u2];
+    }
+
+    async function showQR(store_id, device_token, name) {
+      if (!store_id || !device_token) {
+        await uiAlert("store_id / device_token kosong. Pastikan store punya token.", { title: "QR Error", danger: true });
+        return;
+      }
+
+      const payload = `http://soundbox.local/pair?store_id=${encodeURIComponent(store_id)}&token=${encodeURIComponent(device_token)}`;
+      qrTitleEl.textContent = `QR Pairing • ${name || store_id}`;
+      qrPayloadEl.textContent = payload;
+
+      const urls = buildQrUrls(payload);
+
+      qrStatus.textContent = "Loading QR...";
+      qrImg.src = ""; // reset
+      qrImg.onload = () => { qrStatus.textContent = "QR ready ✅"; };
+      qrImg.onerror = () => {
+        // fallback ke provider ke-2
+        if (qrImg.dataset.try === "1") {
+          qrStatus.textContent = "Provider 1 gagal, coba provider 2...";
+          qrImg.dataset.try = "2";
+          qrImg.src = urls[1];
+        } else {
+          qrStatus.textContent = "Gagal load QR (jaringan memblokir provider).";
+        }
       };
 
-      const onKey = (event) => { if (event.key === "Escape") cleanup(false); };
-      const onOutside = (event) => { if (event.target === modalEl) cleanup(false); };
+      // start provider 1
+      qrImg.dataset.try = "1";
+      qrImg.src = urls[0];
 
-      modalPrimary.onclick = () => cleanup(true);
-      modalSecondary.onclick = () => cleanup(false);
-      modalEl.addEventListener("click", onOutside);
-      window.addEventListener("keydown", onKey);
-    });
-  }
-
-  function uiAlert(message, options = {}) {
-    return showDialog({ title: options.title || "Info", message, confirmText: options.confirmText || "Tutup", danger: Boolean(options.danger) });
-  }
-
-  function uiConfirm(message, options = {}) {
-    return showDialog({ title: options.title || "Konfirmasi", message, confirmText: options.confirmText || "Ya, lanjut", cancelText: options.cancelText || "Batal", danger: Boolean(options.danger) });
-  }
-
-  function getKey() { return sessionStorage.getItem("ADMIN_KEY") || ""; }
-
-  async function saveKey() {
-    const k = adminKeyInput.value.trim();
-    if (!k) { await uiAlert("Masukkan ADMIN_KEY dulu", { title: "Input belum lengkap" }); return; }
-    sessionStorage.setItem("ADMIN_KEY", k);
-    adminKeyInput.value = "";
-    log("ADMIN_KEY tersimpan di sessionStorage");
-    toast("ADMIN_KEY tersimpan", "success");
-    refresh();
-  }
-
-  function clearKey() {
-    sessionStorage.removeItem("ADMIN_KEY");
-    log("ADMIN_KEY dihapus dari sessionStorage");
-    toast("ADMIN_KEY dihapus", "info");
-    renderTable([]);
-    renderTransactions([]);
-    populateStoreOptions([]);
-  }
-
-  async function adminFetch(path, opts = {}) {
-    const k = getKey();
-    if (!k) {
-      await uiAlert("ADMIN_KEY salah / belum diset", { title: "Unauthorized", danger: true });
-      const err = new Error("Unauthorized");
-      err.handled = true;
-      throw err;
+      qrModalEl.classList.add("show");
+      qrModalEl.setAttribute("aria-hidden", "false");
+      qrModalEl.addEventListener("click", onQRBackdrop);
+      window.addEventListener("keydown", onQREsc);
     }
 
-    const headers = Object.assign({ "x-admin-key": k }, opts.headers || {});
-    const res = await fetch(BASE_URL + path, { ...opts, headers });
-    const txt = await res.text();
-    let data;
-    try { data = JSON.parse(txt); } catch { data = txt; }
-    if (res.status === 401) {
-      await uiAlert("ADMIN_KEY salah / belum diset", { title: "Unauthorized", danger: true });
-      const err = new Error("Unauthorized");
-      err.handled = true;
-      throw err;
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status}: ${typeof data === "string" ? data : JSON.stringify(data)}`);
-    return data;
-  }
+    async function downloadQR() {
+      const storeId = (() => {
+        try {
+          const url = new URL(qrPayloadEl.textContent || "http://soundbox.local/pair");
+          return url.searchParams.get("store_id") || "store";
+        } catch {
+          return "store";
+        }
+      })();
+      const filename = `pairing-${storeId}.png`;
 
-  async function handleError(e, title) {
-    log(`ERR: ${e.message}`);
-    if (e && e.handled) return;
-    await uiAlert(e.message, { title, danger: true });
-  }
+      try {
+        const res = await fetch(qrImg.src, { mode: "cors" });
+        if (!res.ok) throw new Error("fetch not ok");
+        const blob = await res.blob();
 
-  async function refresh() {
-    try {
-      log("GET /admin/stores ...");
-      const data = await adminFetch("/admin/stores");
-      const stores = data.stores || [];
-      renderTable(stores);
-      populateStoreOptions(stores);
-      log(`OK: loaded ${data.stores?.length || 0} stores`);
-      await refreshTransactions();
-    } catch (e) {
-      await handleError(e, "Gagal memuat data");
-    }
-  }
+        const a = document.createElement("a");
+        const objectUrl = URL.createObjectURL(blob);
+        a.href = objectUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
 
-  function getForm() {
-    return {
-      store_id: document.getElementById("store_id").value.trim(),
-      name: document.getElementById("name").value.trim(),
-    };
-  }
-
-  function setForm(store_id, name) {
-    document.getElementById("store_id").value = store_id || "";
-    document.getElementById("name").value = name || "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  async function upsertStore(extra = {}) {
-    const { store_id, name } = getForm();
-    if (!store_id || !name) { await uiAlert("store_id dan name wajib diisi", { title: "Input belum lengkap" }); return; }
-
-    try {
-      log("POST /admin/stores (upsert) ...");
-      const payload = { store_id, name, ...extra };
-      const out = await adminFetch("/admin/stores", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      log(`OK: upsert ${store_id} | token=${out.device_token}`);
-      await refresh();
-      await uiAlert(
-        `Store tersimpan.\n\nstore_id: ${out.store_id}\nname: ${out.name}\ndevice_token: ${out.device_token}\n\nSimpan token ini untuk soundbox.`,
-        { title: "Berhasil" }
-      );
-    } catch (e) {
-      await handleError(e, "Gagal menyimpan");
-    }
-  }
-
-  function randomHex(len = 32) {
-    const arr = new Uint8Array(len / 2);
-    crypto.getRandomValues(arr);
-    return [...arr].map(b => b.toString(16).padStart(2, "0")).join("");
-  }
-
-  async function generateToken() {
-    const { store_id, name } = getForm();
-    if (!store_id || !name) { await uiAlert("Isi store_id dan name dulu, baru generate token", { title: "Input belum lengkap" }); return; }
-    const newToken = "sb_" + randomHex(32);
-    await upsertStore({ device_token: newToken });
-  }
-
-  async function enableStore(store_id) {
-    try {
-      log(`POST /admin/stores/enable ${store_id} ...`);
-      await adminFetch("/admin/stores/enable", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
-      toast(`${store_id} enabled`, "success");
-      await refresh();
-    } catch (e) { await handleError(e, "Gagal mengaktifkan"); }
-  }
-
-  async function disableStore(store_id) {
-    try {
-      log(`POST /admin/stores/disable ${store_id} ...`);
-      await adminFetch("/admin/stores/disable", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
-      toast(`${store_id} disabled`, "info");
-      await refresh();
-    } catch (e) { await handleError(e, "Gagal menonaktifkan"); }
-  }
-
-  async function deleteStore(store_id) {
-    const confirmed = await uiConfirm(`Hapus store ${store_id}? (permanen)`, { title: "Konfirmasi hapus", confirmText: "Hapus", cancelText: "Batal", danger: true });
-    if (!confirmed) return;
-    try {
-      log(`POST /admin/stores/delete ${store_id} ...`);
-      await adminFetch("/admin/stores/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ store_id }) });
-      toast(`${store_id} dihapus`, "info");
-      await refresh();
-    } catch (e) { await handleError(e, "Gagal menghapus"); }
-  }
-
-  async function copy(text) {
-    try { await navigator.clipboard.writeText(text); toast("Tersalin ke clipboard", "success"); }
-    catch { await uiAlert("Gagal copy (browser tidak mengizinkan). Copy manual ya.", { title: "Tidak bisa copy" }); }
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
-  }
-  function escapeJs(s) { return String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
-
-  // ==========================
-  // QR Pairing (IMG + fallback providers)
-  // ==========================
-  function closeQR() {
-    qrModalEl.classList.remove("show");
-    qrModalEl.setAttribute("aria-hidden", "true");
-    qrModalEl.removeEventListener("click", onQRBackdrop);
-    window.removeEventListener("keydown", onQREsc);
-  }
-  function onQRBackdrop(e) { if (e.target === qrModalEl) closeQR(); }
-  function onQREsc(e) { if (e.key === "Escape") closeQR(); }
-
-  function buildQrUrls(payload) {
-    // Provider 1: Google Chart
-    const u1 = "https://chart.googleapis.com/chart"
-      + "?cht=qr&chs=260x260&chld=M|2&chl=" + encodeURIComponent(payload);
-
-    // Provider 2: QuickChart (biasanya tembus kalau google keblok)
-    const u2 = "https://quickchart.io/qr"
-      + "?size=260&margin=2&ecLevel=M&text=" + encodeURIComponent(payload);
-
-    return [u1, u2];
-  }
-
-  async function showQR(store_id, device_token, name) {
-    if (!store_id || !device_token) {
-      await uiAlert("store_id / device_token kosong. Pastikan store punya token.", { title: "QR Error", danger: true });
-      return;
-    }
-
-    const payload = JSON.stringify({ store_id, device_token });
-    qrTitleEl.textContent = `QR Pairing • ${name || store_id}`;
-    qrPayloadEl.textContent = payload;
-
-    const urls = buildQrUrls(payload);
-
-    qrStatus.textContent = "Loading QR...";
-    qrImg.src = ""; // reset
-    qrImg.onload = () => { qrStatus.textContent = "QR ready ✅"; };
-    qrImg.onerror = () => {
-      // fallback ke provider ke-2
-      if (qrImg.dataset.try === "1") {
-        qrStatus.textContent = "Provider 1 gagal, coba provider 2...";
-        qrImg.dataset.try = "2";
-        qrImg.src = urls[1];
-      } else {
-        qrStatus.textContent = "Gagal load QR (jaringan memblokir provider).";
+        toast("QR diunduh", "success");
+      } catch (e) {
+        // fallback
+        window.open(qrImg.src, "_blank", "noopener,noreferrer");
+        await uiAlert("Browser memblokir download otomatis.\nAku buka QR di tab baru—silakan Save/Download manual.", { title: "Download via tab baru" });
       }
-    };
-
-    // start provider 1
-    qrImg.dataset.try = "1";
-    qrImg.src = urls[0];
-
-    qrModalEl.classList.add("show");
-    qrModalEl.setAttribute("aria-hidden", "false");
-    qrModalEl.addEventListener("click", onQRBackdrop);
-    window.addEventListener("keydown", onQREsc);
-  }
-
-  async function downloadQR() {
-    const storeId = (() => { try { return JSON.parse(qrPayloadEl.textContent || "{}").store_id || "store"; } catch { return "store"; } })();
-    const filename = `pairing-${storeId}.png`;
-
-    try {
-      const res = await fetch(qrImg.src, { mode: "cors" });
-      if (!res.ok) throw new Error("fetch not ok");
-      const blob = await res.blob();
-
-      const a = document.createElement("a");
-      const objectUrl = URL.createObjectURL(blob);
-      a.href = objectUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(objectUrl);
-
-      toast("QR diunduh", "success");
-    } catch (e) {
-      // fallback
-      window.open(qrImg.src, "_blank", "noopener,noreferrer");
-      await uiAlert("Browser memblokir download otomatis.\nAku buka QR di tab baru—silakan Save/Download manual.", { title: "Download via tab baru" });
-    }
-  }
-
-  function renderTable(stores) {
-    const wrap = document.getElementById("tableWrap");
-    if (!stores.length) {
-      wrap.innerHTML = `<div class="muted" style="padding:12px">Tidak ada store (atau belum login admin).</div>`;
-      return;
     }
 
-    const rows = stores.map(s => {
-      const badge = s.enabled ? `<span class="pill ok">enabled</span>` : `<span class="pill off">disabled</span>`;
-      const token = s.device_token || "";
-      return `
+    function renderTable(stores) {
+      const wrap = document.getElementById("tableWrap");
+      if (!stores.length) {
+        wrap.innerHTML = `<div class="muted" style="padding:12px">Tidak ada store (atau belum login admin).</div>`;
+        return;
+      }
+
+      const rows = stores.map(s => {
+        const badge = s.enabled ? `<span class="pill ok">enabled</span>` : `<span class="pill off">disabled</span>`;
+        const token = s.device_token || "";
+        return `
         <tr>
           <td><b>${escapeHtml(s.store_id)}</b><div class="muted">${escapeHtml(s.created_at || "")}</div></td>
           <td>${escapeHtml(s.name || "")}</td>
@@ -588,17 +971,17 @@
             <div class="actions">
               <button class="secondary" onclick="setForm('${escapeJs(s.store_id)}','${escapeJs(s.name)}')">Edit</button>
               ${s.enabled
-                ? `<button class="secondary" onclick="disableStore('${escapeJs(s.store_id)}')">Disable</button>`
-                : `<button class="secondary" onclick="enableStore('${escapeJs(s.store_id)}')">Enable</button>`
-              }
+            ? `<button class="secondary" onclick="disableStore('${escapeJs(s.store_id)}')">Disable</button>`
+            : `<button class="secondary" onclick="enableStore('${escapeJs(s.store_id)}')">Enable</button>`
+          }
               <button class="danger" onclick="deleteStore('${escapeJs(s.store_id)}')">Delete</button>
             </div>
           </td>
         </tr>
       `;
-    }).join("");
+      }).join("");
 
-    wrap.innerHTML = `
+      wrap.innerHTML = `
       <table>
         <thead>
           <tr>
@@ -608,36 +991,36 @@
         <tbody>${rows}</tbody>
       </table>
     `;
-  }
-
-  function populateStoreOptions(stores) {
-    const current = txStoreSelect.value || "";
-    const options = [
-      `<option value="">All stores</option>`,
-      ...stores.map(s => `<option value="${escapeHtml(s.store_id)}">${escapeHtml(s.store_id)}</option>`)
-    ];
-    txStoreSelect.innerHTML = options.join("");
-    if (stores.some(s => s.store_id === current)) {
-      txStoreSelect.value = current;
-    }
-  }
-
-  function formatRupiah(amount) {
-    const num = Number(amount);
-    if (!Number.isFinite(num)) return "-";
-    return `Rp ${num.toLocaleString("id-ID")}`;
-  }
-
-  function renderTransactions(transactions) {
-    if (!transactions.length) {
-      txTableWrap.innerHTML = `<div class="muted" style="padding:12px">No transactions found.</div>`;
-      return;
     }
 
-    const rows = transactions.map(t => {
-      const isPlayed = Number(t.played) === 1;
-      const playedBadge = isPlayed ? `<span class="pill ok">played</span>` : `<span class="pill off">pending</span>`;
-      return `
+    function populateStoreOptions(stores) {
+      const current = txStoreSelect.value || "";
+      const options = [
+        `<option value="">All stores</option>`,
+        ...stores.map(s => `<option value="${escapeHtml(s.store_id)}">${escapeHtml(s.store_id)}</option>`)
+      ];
+      txStoreSelect.innerHTML = options.join("");
+      if (stores.some(s => s.store_id === current)) {
+        txStoreSelect.value = current;
+      }
+    }
+
+    function formatRupiah(amount) {
+      const num = Number(amount);
+      if (!Number.isFinite(num)) return "-";
+      return `Rp ${num.toLocaleString("id-ID")}`;
+    }
+
+    function renderTransactions(transactions) {
+      if (!transactions.length) {
+        txTableWrap.innerHTML = `<div class="muted" style="padding:12px">No transactions found.</div>`;
+        return;
+      }
+
+      const rows = transactions.map(t => {
+        const isPlayed = Number(t.played) === 1;
+        const playedBadge = isPlayed ? `<span class="pill ok">played</span>` : `<span class="pill off">pending</span>`;
+        return `
         <tr>
           <td><b>${escapeHtml(t.id)}</b></td>
           <td>${escapeHtml(t.store_id || "")}</td>
@@ -646,9 +1029,9 @@
           <td>${escapeHtml(t.created_at || "")}</td>
         </tr>
       `;
-    }).join("");
+      }).join("");
 
-    txTableWrap.innerHTML = `
+      txTableWrap.innerHTML = `
       <table>
         <thead>
           <tr>
@@ -658,50 +1041,51 @@
         <tbody>${rows}</tbody>
       </table>
     `;
-  }
-
-  async function refreshTransactions() {
-    try {
-      const params = new URLSearchParams();
-      if (txStoreSelect.value) params.set("store_id", txStoreSelect.value);
-      if (txPlayedSelect.value === "0" || txPlayedSelect.value === "1") params.set("played", txPlayedSelect.value);
-      if (txLimitSelect.value) params.set("limit", txLimitSelect.value);
-
-      const query = params.toString();
-      const path = query ? `/admin/transactions?${query}` : "/admin/transactions";
-      log(`GET ${path} ...`);
-      const data = await adminFetch(path);
-      renderTransactions(data.transactions || []);
-      log(`OK: loaded ${data.transactions?.length || 0} transactions`);
-    } catch (e) {
-      await handleError(e, "Gagal memuat transaksi");
     }
-  }
 
-  async function clearTransactions() {
-    const storeId = txStoreSelect.value;
-    if (!storeId) {
-      await uiAlert("Pilih store dulu untuk menghapus transaksi.", { title: "Store belum dipilih", danger: true });
-      return;
-    }
-    const confirmed = await uiConfirm(`Hapus semua transaksi untuk ${storeId}?`, { title: "Konfirmasi hapus", confirmText: "Hapus", cancelText: "Batal", danger: true });
-    if (!confirmed) return;
-    try {
-      log(`POST /admin/transactions/clear ${storeId} ...`);
-      const out = await adminFetch("/admin/transactions/clear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ store_id: storeId })
-      });
-      toast(`Deleted ${out.deleted || 0} transactions`, "success");
-      await refreshTransactions();
-    } catch (e) {
-      await handleError(e, "Gagal menghapus transaksi");
-    }
-  }
+    async function refreshTransactions() {
+      try {
+        const params = new URLSearchParams();
+        if (txStoreSelect.value) params.set("store_id", txStoreSelect.value);
+        if (txPlayedSelect.value === "0" || txPlayedSelect.value === "1") params.set("played", txPlayedSelect.value);
+        if (txLimitSelect.value) params.set("limit", txLimitSelect.value);
 
-  // Auto-refresh kalau sudah ada key tersimpan
-  if (getKey()) refresh();
-</script>
+        const query = params.toString();
+        const path = query ? `/admin/transactions?${query}` : "/admin/transactions";
+        log(`GET ${path} ...`);
+        const data = await adminFetch(path);
+        renderTransactions(data.transactions || []);
+        log(`OK: loaded ${data.transactions?.length || 0} transactions`);
+      } catch (e) {
+        await handleError(e, "Gagal memuat transaksi");
+      }
+    }
+
+    async function clearTransactions() {
+      const storeId = txStoreSelect.value;
+      if (!storeId) {
+        await uiAlert("Pilih store dulu untuk menghapus transaksi.", { title: "Store belum dipilih", danger: true });
+        return;
+      }
+      const confirmed = await uiConfirm(`Hapus semua transaksi untuk ${storeId}?`, { title: "Konfirmasi hapus", confirmText: "Hapus", cancelText: "Batal", danger: true });
+      if (!confirmed) return;
+      try {
+        log(`POST /admin/transactions/clear ${storeId} ...`);
+        const out = await adminFetch("/admin/transactions/clear", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ store_id: storeId })
+        });
+        toast(`Deleted ${out.deleted || 0} transactions`, "success");
+        await refreshTransactions();
+      } catch (e) {
+        await handleError(e, "Gagal menghapus transaksi");
+      }
+    }
+
+    // Auto-refresh kalau sudah ada key tersimpan
+    if (getKey()) refresh();
+  </script>
 </body>
+
 </html>
