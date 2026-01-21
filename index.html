@@ -883,7 +883,7 @@
         return;
       }
 
-      const payload = `http://soundbox.local/pair?store_id=${encodeURIComponent(store_id)}&token=${encodeURIComponent(device_token)}`;
+      const payload = `http://192.168.4.1/pair?store_id=${encodeURIComponent(store_id)}&token=${encodeURIComponent(device_token)}`;
       qrTitleEl.textContent = `QR Pairing • ${name || store_id}`;
       qrPayloadEl.textContent = payload;
 
@@ -916,7 +916,7 @@
     async function downloadQR() {
       const storeId = (() => {
         try {
-          const url = new URL(qrPayloadEl.textContent || "http://soundbox.local/pair");
+          const url = new URL(qrPayloadEl.textContent || "http://192.168.4.1/pair");
           return url.searchParams.get("store_id") || "store";
         } catch {
           return "store";
