@@ -22,6 +22,8 @@
       --border: #d0d5dd;
       --shadow: 0 24px 40px -30px rgba(16, 24, 40, .45);
       --radius: 16px;
+      --table-row-height: 48px;
+      --table-visible-rows: 5;
     }
 
     * {
@@ -200,6 +202,9 @@
 
     .table-wrap {
       overflow-x: auto;
+      overflow-y: auto;
+      max-height: calc(var(--table-row-height) * (var(--table-visible-rows) + 1));
+      scrollbar-gutter: stable;
       border-radius: 12px;
       border: 1px solid rgba(16, 24, 40, .12)
     }
