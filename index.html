@@ -804,6 +804,13 @@
         return;
       }
 
+      const parseD1Date = (value) => {
+        if (!value) return null;
+        const str = String(value);
+        if (str.includes("T")) return new Date(str);
+        return new Date(str.replace(" ", "T") + "Z");
+      };
+
       let html = `<table>
         <thead>
           <tr>
@@ -817,19 +824,19 @@
         <tbody>`;
 
       html += devices.map(d => {
-        const lastSeenDate = new Date(d.last_seen);
-        const minsAgo = Math.floor((Date.now() - lastSeenDate.getTime()) / 60000);
+        const lastSeenDate = parseD1Date(d.last_seen);
+        const minsAgo = lastSeenDate ? Math.floor((Date.now() - lastSeenDate.getTime()) / 60000) : NaN;
 
         let statusPill = "Unknown";
-        if (minsAgo < 5) {
+        if (Number.isFinite(minsAgo) && minsAgo < 5) {
           statusPill = `<span class="pill ok">Online</span>`;
-        } else if (minsAgo > 30) {
+        } else if (Number.isFinite(minsAgo) && minsAgo > 30) {
           statusPill = `<span class="pill off">Offline</span>`;
         } else {
           statusPill = `<span class="pill neutral">Idle (${minsAgo}m)</span>`;
         }
 
-        const timeStr = isNaN(minsAgo) ? "-" : `${minsAgo} menit lalu`;
+        const timeStr = Number.isNaN(minsAgo) ? "-" : `${minsAgo} menit lalu`;
 
         return `<tr>
           <td>
@@ -840,7 +847,7 @@
           <td>${d.ip_address || "-"}</td>
           <td>
             ${timeStr}<br/>
-            <span class="muted" style="font-size:11px">${lastSeenDate.toLocaleString()}</span>
+            <span class="muted" style="font-size:11px">${lastSeenDate ? lastSeenDate.toLocaleString() : "-"}</span>
           </td>
           <td>${statusPill}</td>
         </tr>`;
