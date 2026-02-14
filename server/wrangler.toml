@@ -1,0 +1,9 @@
+name = "server"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB" # Matches env.DB in your code
+database_name = "qris_db" # Matches the name in your d1 list
+database_id = "97812877-64d1-4b36-a4c6-a3ea3ea10ddd" # FROM YOUR LIST

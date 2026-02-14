@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔊 Setup WiFi Soundbox</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .status-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-card.full {
+            grid-column: 1 / -1;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        select,
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-wrapper input {
+            padding-right: 50px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            transition: background 0.2s;
+            color: #6b7280;
+        }
+
+        .toggle-password:hover {
+            background: #f3f4f6;
+            color: #2563eb;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+            margin: 30px 0;
+        }
+
+        .info-section {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .info-section h3 {
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 15px;
+        }
+
+        .tools {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tool-link {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .tool-link:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .tool-link.danger {
+            color: #ef4444;
+            border-color: #fecaca;
+        }
+
+        .tool-link.danger:hover {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .qr-section {
+            background: #f9fafb;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #qr-video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scan-box {
+            width: 200px;
+            height: 200px;
+            border: 3px solid #2563eb;
+            border-radius: 15px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                border-color: #2563eb;
+            }
+
+            50% {
+                border-color: #10b981;
+            }
+        }
+
+        .scan-text {
+            color: white;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .scanner-status {
+            text-align: center;
+        }
+
+        .btn-scan {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #2563eb;
+            border: 2px solid #2563eb;
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+            transform: translateY(-2px);
+        }
+
+        .pairing-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .scan-box {
+                width: 150px;
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔊 Setup WiFi Soundbox</h1>
+            <p style="color: #6b7280; font-size: 14px;">Konfigurasi koneksi perangkat Anda</p>
+        </div>
+
+        <div class="status-grid">
+            <div class="status-card">
+                <div class="status-label">Status WiFi</div>
+                <div class="status-value" id="wifi-status-value">Belum Terhubung</div>
+            </div>
+            <div class="status-card">
+                <div class="status-label">Status QR Code</div>
+                <div class="status-value" style="color: #ef4444;">Belum Discan</div>
+            </div>
+        </div>
+
+        <!-- QR Scanner Section -->
+        <div id="qr-section" class="qr-section">
+            <h3 style="font-size: 18px; color: #374151; margin-bottom: 15px; text-align: center;">
+                📷 Langkah 1: Scan QR Code
+            </h3>
+
+            <div id="scanner-container" class="scanner-container" style="display: none;">
+                <video id="qr-video" playsinline autoplay></video>
+                <div class="scan-overlay">
+                    <div class="scan-box"></div>
+                    <p class="scan-text">Arahkan kamera ke QR code</p>
+                </div>
+            </div>
+
+            <div id="scanner-status" class="scanner-status">
+                <p style="color: #6b7280; margin-bottom: 15px; text-align: center;">
+                    Scan QR code dari admin panel
+                </p>
+                <button type="button" class="btn btn-scan" onclick="startQRScanner()">
+                    📸 Mulai Scan QR Code
+                </button>
+
+            </div>
+
+            <div id="pairing-success" class="pairing-success" style="display: none;">
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                    <h4 style="color: #10b981; margin-bottom: 10px;">QR Code Berhasil!</h4>
+                    <p style="color: #6b7280; font-size: 14px;" id="paired-store-name">Toko: -</p>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- WiFi Setup Section -->
+        <div id="wifi-section" class="wifi-section">
+            <h3 style="font-size: 18px; color: #374151; margin-bottom: 15px; text-align: center;">
+                📶 Langkah 2: Setup WiFi
+            </h3>
+        </div>
+
+        <form method="POST" action="/save-wifi" onsubmit="return handleSubmit(event)">
+            <div class="form-group">
+                <label for="ssid">📶 Pilih Jaringan WiFi</label>
+                <select name="ssid" id="ssid" required>
+                    <option value="">-- Pilih WiFi --</option>
+                    <option value="WiFi_Rumah">WiFi_Rumah (Sangat Baik)</option>
+                    <option value="Toko_WiFi">Toko_WiFi (Baik)</option>
+                    <option value="Kantor_Net">Kantor_Net (Cukup)</option>
+                    <option value="Public_WiFi">Public_WiFi (Lemah)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="pass">🔐 Password WiFi</label>
+                <div class="password-wrapper">
+                    <input type="password" name="pass" id="pass" placeholder="Masukkan password">
+                    <button type="button" class="toggle-password" onclick="togglePassword()">
+                        <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">💾 Sambungkan WiFi</button>
+        </form>
+
+
+    </div>
+
+    <script>
+        let scannerActive = false;
+        let videoStream = null;
+
+        function togglePassword() {
+            const passInput = document.getElementById('pass');
+            const eyeIcon = document.getElementById('eye-icon');
+
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                // Eye with slash (hidden)
+                eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            } else {
+                passInput.type = 'password';
+                // Eye (visible)
+                eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        }
+
+        async function startQRScanner() {
+            const scannerStatus = document.getElementById('scanner-status');
+            const scannerContainer = document.getElementById('scanner-container');
+            const video = document.getElementById('qr-video');
+
+            try {
+                // Request camera permission
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' } // Use back camera
+                });
+
+                video.srcObject = videoStream;
+                scannerStatus.style.display = 'none';
+                scannerContainer.style.display = 'block';
+                scannerActive = true;
+
+                // Simulate QR detection after 3 seconds (for demo)
+                setTimeout(() => {
+                    detectQRCode({
+                        store_id: 'DEMO_STORE_123',
+                        token: 'demo_token_xyz789',
+                        name: 'Toko Demo Elektronik'
+                    });
+                }, 3000);
+
+            } catch (error) {
+                alert('Tidak dapat mengakses kamera.\n\nSilakan izinkan akses kamera di browser.');
+                console.error('Camera error:', error);
+            }
+        }
+
+        function detectQRCode(data) {
+            // Stop camera
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+
+            const scannerContainer = document.getElementById('scanner-container');
+            const pairingSuccess = document.getElementById('pairing-success');
+            const pairedStoreName = document.getElementById('paired-store-name');
+
+            scannerContainer.style.display = 'none';
+            pairingSuccess.style.display = 'block';
+            pairedStoreName.textContent = `Toko: ${data.name}`;
+
+            // Update QR Code status card
+            const qrStatusValue = document.querySelector('.status-card:nth-child(2) .status-value');
+            qrStatusValue.textContent = '✓ ' + data.name;
+            qrStatusValue.style.color = '#10b981';
+
+            // Save data (in real ESP32, this would be saved to preferences)
+            console.log('QR Code data:', data);
+
+            // Play success sound
+            playBeep();
+        }
+
+        function playBeep() {
+            // Simple beep sound using Web Audio API
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            const ssid = document.getElementById('ssid').value;
+            const pass = document.getElementById('pass').value;
+
+            // Update WiFi status card
+            const wifiStatusValue = document.querySelector('.status-card:nth-child(1) .status-value');
+            wifiStatusValue.textContent = '✓ ' + ssid;
+            wifiStatusValue.style.color = '#10b981';
+
+            alert(`Preview Mode:\n\nSSID: ${ssid}\nPassword: ${pass}\n\nDi ESP32 asli, akan menyimpan dan restart dalam 2 detik.`);
+            return false;
+        }
+
+        // Info for developers
+        console.log('%c📷 QR Scanner Demo', 'font-size: 20px; color: #2563eb; font-weight: bold;');
+        console.log('Klik "Mulai Scan QR Code" untuk test camera access');
+        console.log('QR akan terdeteksi otomatis setelah 3 detik (demo mode)');
+    </script>
+</body>
+
+</html>
