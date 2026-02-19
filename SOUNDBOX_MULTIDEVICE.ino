@@ -230,34 +230,10 @@ void handleENTripleResetEarly() {
   // Get current values from flash
   uint32_t enCount = prefs.getUInt("enCount", 0);
   uint32_t enBoot = prefs.getUInt("enBoot", 0);
-  uint32_t enTime = prefs.getUInt("enTime", 0);
 
   // Current boot number (increment on every boot)
   uint32_t currentBoot = enBoot + 1;
   prefs.putUInt("enBoot", currentBoot);
-
-  // Estimate: if this is the first boot within EN_WINDOW_MS since last tracked
-  // boot, increment counter. Otherwise reset.
-  //
-  // Problem: millis() resets each boot, so we can't use absolute time.
-  // Solution: Use the boot number itself as a sequence detector.
-  // If boots happen in quick succession, boot numbers will be consecutive.
-  // We store the boot number when counter started, and check if current boot
-  // is within a reasonable sequence.
-
-  // Better approach: Store actual uptime when counter started using esp_timer
-  // But esp_timer also resets. So we use a different method:
-  // Store boot count and assume if user boots 3 times quickly, they're trying
-  // to reset.
-
-  // Simpler solution: Use the fact that NVS write time is ~few ms.
-  // If 3 boots happen within 6 seconds total (wall clock time), counter works.
-  // We'll store millis() of first reset, but that doesn't help across boots.
-
-  // ACTUAL WORKING SOLUTION:
-  // Store epoch timestamp using RTC time if available, or use a different
-  // method. Since we don't have RTC at this point, we use boot counting with
-  // timeout.
 
   // Let's use boot sequence numbers:
   uint32_t firstBoot = prefs.getUInt("enFirstBoot", 0);
@@ -528,7 +504,7 @@ void startAP() {
   apOn = true;
   Serial.print("[AP] ON SSID: ");
   Serial.println(ssid);
-  Serial.print("[AP] ON IP  : ");
+  Serial.print("[AP] ON IP : ");
   Serial.println(apIP);
 
   if (lcdOk)
@@ -561,412 +537,6 @@ String htmlEscape(String s) {
   s.replace("\"", "&quot;");
   s.replace("'", "&#39;");
   return s;
-}
-
-String portalPage() {
-  int n = WiFi.scanNetworks();
-  String opt = "";
-  for (int i = 0; i < n; i++) {
-    String ssid = WiFi.SSID(i);
-    int rssi = WiFi.RSSI(i);
-    String strength = (rssi > -50)   ? "Sangat Baik"
-                      : (rssi > -60) ? "Baik"
-                      : (rssi > -70) ? "Cukup"
-                                     : "Lemah";
-    opt += "<option value='" + htmlEscape(ssid) + "'>" + htmlEscape(ssid) +
-           " (" + strength + ")</option>";
-  }
-  if (n <= 0)
-    opt = "<option value=''>Tidak ada jaringan</option>";
-
-  String qrStatus = isPaired() ? ("✓ " + htmlEscape(storeId)) : "Belum Discan";
-  String qrColor = isPaired() ? "#10b981" : "#ef4444";
-
-  String wifiStatus = (WiFi.status() == WL_CONNECTED) ? ("✓ " + WiFi.SSID())
-                                                      : "Belum Terhubung";
-  String wifiColor = (WiFi.status() == WL_CONNECTED) ? "#10b981" : "#1f2937";
-
-  String h = R"rawliteral(
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🔊 Setup WiFi Soundbox</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-      min-height: 100vh;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      max-width: 500px;
-      width: 100%;
-      padding: 30px;
-      animation: slideIn 0.5s ease-out;
-    }
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .header h1 {
-      font-size: 28px;
-      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 10px;
-    }
-    .status-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 25px;
-    }
-    .status-card {
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .status-label {
-      font-size: 12px;
-      color: #6b7280;
-      font-weight: 600;
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .status-value {
-      font-size: 16px;
-      font-weight: 700;
-      color: #1f2937;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      font-size: 14px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 8px;
-    }
-    select, input {
-      width: 100%;
-      padding: 14px;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
-      font-size: 15px;
-      transition: all 0.3s ease;
-      background: white;
-    }
-    select:focus, input:focus {
-      outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-    .password-wrapper {
-      position: relative;
-    }
-    .password-wrapper input {
-      padding-right: 50px;
-    }
-    .toggle-password {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 5px;
-      width: 35px;
-      height: 35px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 5px;
-      transition: background 0.2s;
-      color: #6b7280;
-    }
-    .toggle-password:hover {
-      background: #f3f4f6;
-      color: #2563eb;
-    }
-    .btn {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 10px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
-    }
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
-    }
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
-      margin: 30px 0;
-    }
-    .qr-section {
-      background: #f9fafb;
-      padding: 25px;
-      border-radius: 15px;
-      margin-bottom: 20px;
-    }
-    .scanner-container {
-      position: relative;
-      width: 100%;
-      max-width: 400px;
-      margin: 0 auto 20px;
-      border-radius: 15px;
-      overflow: hidden;
-      background: #000;
-    }
-    #qr-video {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    .scan-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    .scan-box {
-      width: 200px;
-      height: 200px;
-      border: 3px solid #2563eb;
-      border-radius: 15px;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% {
-        border-color: #2563eb;
-      }
-      50% {
-        border-color: #10b981;
-      }
-    }
-    .scan-text {
-      color: white;
-      margin-top: 20px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .scanner-status {
-      text-align: center;
-    }
-    .btn-scan {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-    }
-    .btn-scan:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
-    }
-    .pairing-success {
-      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-      border-radius: 12px;
-      margin-bottom: 15px;
-    }
-    @media (max-width: 600px) {
-      .status-grid {
-        grid-template-columns: 1fr;
-      }
-      .container {
-        padding: 20px;
-      }
-      .scan-box {
-        width: 150px;
-        height: 150px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🔊 Setup WiFi Soundbox</h1>
-      <p style="color: #6b7280; font-size: 14px;">Konfigurasi koneksi perangkat Anda</p>
-    </div>
-
-    <div class="status-grid">
-      <div class="status-card">
-        <div class="status-label">Status WiFi</div>
-        <div class="status-value" style="color: )rawliteral" +
-             wifiColor + R"rawliteral(;">)rawliteral" + wifiStatus +
-             R"rawliteral(</div>
-      </div>
-      <div class="status-card">
-        <div class="status-label">Status QR Code</div>
-        <div class="status-value" style="color: )rawliteral" +
-             qrColor + R"rawliteral(;">)rawliteral" + qrStatus +
-             R"rawliteral(</div>
-      </div>
-    </div>
-
-    <!-- QR Scanner Section -->
-    <div id="qr-section" class="qr-section">
-      <h3 style="font-size: 18px; color: #374151; margin-bottom: 15px; text-align: center;">
-        📷 Langkah 1: Scan QR Code
-      </h3>
-
-      <div id="scanner-container" class="scanner-container" style="display: none;">
-        <video id="qr-video" playsinline autoplay></video>
-        <div class="scan-overlay">
-          <div class="scan-box"></div>
-          <p class="scan-text">Arahkan kamera ke QR code</p>
-        </div>
-      </div>
-
-      <div id="scanner-status" class="scanner-status">
-        <p style="color: #6b7280; margin-bottom: 15px; text-align: center;">
-          Scan QR code dari admin panel
-        </p>
-        <button type="button" class="btn btn-scan" onclick="startQRScanner()">
-          📸 Mulai Scan QR Code
-        </button>
-      </div>
-
-      <div id="pairing-success" class="pairing-success" style="display: none;">
-        <div style="text-align: center; padding: 20px;">
-          <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
-          <h4 style="color: #10b981; margin-bottom: 10px;">QR Code Berhasil!</h4>
-          <p style="color: #6b7280; font-size: 14px;" id="paired-store-name">Toko: -</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- WiFi Setup Section -->
-    <div id="wifi-section" class="wifi-section">
-      <h3 style="font-size: 18px; color: #374151; margin-bottom: 15px; text-align: center;">
-        📶 Langkah 2: Setup WiFi
-      </h3>
-    </div>
-
-    <form method="POST" action="/save-wifi">
-      <div class="form-group">
-        <label for="ssid">📶 Pilih Jaringan WiFi</label>
-        <select name="ssid" id="ssid" required>
-          )rawliteral" +
-             opt + R"rawliteral(
-        </select>
-      </div>
-      
-      <div class="form-group">
-        <label for="pass">🔐 Password WiFi</label>
-        <div class="password-wrapper">
-          <input type="password" name="pass" id="pass" placeholder="Masukkan password">
-          <button type="button" class="toggle-password" onclick="togglePassword()">
-            <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <button type="submit" class="btn btn-primary">💾 Sambungkan WiFi</button>
-    </form>
-  </div>
-
-  <script>
-    let scannerActive = false;
-    let videoStream = null;
-
-    function togglePassword() {
-      const passInput = document.getElementById('pass');
-      const eyeIcon = document.getElementById('eye-icon');
-      
-      if (passInput.type === 'password') {
-        passInput.type = 'text';
-        eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-      } else {
-        passInput.type = 'password';
-        eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-      }
-    }
-
-    async function startQRScanner() {
-      const scannerStatus = document.getElementById('scanner-status');
-      const scannerContainer = document.getElementById('scanner-container');
-      const video = document.getElementById('qr-video');
-
-      try {
-        videoStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment' }
-        });
-
-        video.srcObject = videoStream;
-        scannerStatus.style.display = 'none';
-        scannerContainer.style.display = 'block';
-        scannerActive = true;
-
-        // Note: Actual QR scanning would require jsQR library
-        // For now, redirect to manual input or use external scanner
-      } catch (error) {
-        alert('Tidak dapat mengakses kamera.\n\nSilakan gunakan fitur scan QR dari aplikasi kamera ponsel Anda, lalu buka link yang muncul.');
-        console.error('Camera error:', error);
-      }
-    }
-  </script>
-</body>
-</html>
-)rawliteral";
-
-  return h;
 }
 
 // =====================
@@ -1047,7 +617,11 @@ void handleRoot() {
     .btn{width:100%;padding:16px;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px}
     .btn-primary{background:linear-gradient(135deg,#2563eb,#1e40af);color:white;box-shadow:0 4px 15px rgba(37,99,235,0.4)}
     .divider{height:1px;background:linear-gradient(90deg,transparent,#e5e7eb,transparent);margin:30px 0}
-    .device-id{font-size:24px;font-weight:800;letter-spacing:2px;color:#1e40af;background:#eff6ff;padding:15px;border-radius:10px;border:2px dashed #93c5fd}
+    .btn-primary{background:linear-gradient(135deg,#2563eb,#1e40af);color:white;box-shadow:0 4px 15px rgba(37,99,235,0.4)}
+    .divider{height:1px;background:linear-gradient(90deg,transparent,#e5e7eb,transparent);margin:30px 0}
+    .device-id{font-size:18px;font-weight:700;letter-spacing:1px;color:#1e40af;background:#eff6ff;padding:12px;border-radius:10px;border:2px dashed #93c5fd}
+    .pass-wrapper{position:relative}
+    .toggle-pass{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:#6b7280}
   </style>
 </head>
 <body>
@@ -1095,8 +669,21 @@ void handleRoot() {
     </div>
     <div class="form-group">
       <label>Password WiFi</label>
-      <input type="password" name="pass" placeholder="Masukkan password WiFi">
+      <div class="pass-wrapper">
+        <input type="password" name="pass" id="pass" placeholder="Masukkan password WiFi">
+        <button type="button" class="toggle-pass" onclick="togglePass()">👁️</button>
+      </div>
     </div>
+    <script>
+      function togglePass() {
+        var x = document.getElementById("pass");
+        if (x.type === "password") {
+          x.type = "text";
+        } else {
+          x.type = "password";
+        }
+      }
+    </script>
     <button type="submit" class="btn btn-primary">Simpan & Restart</button>
   </form>
   <div class="divider"></div>
@@ -1549,8 +1136,6 @@ PollResult pollOnce() {
 
   Serial.printf("[POLL] ✓ TX found: %s, amount=Rp%d\n", txid, amount);
 
-  // showPaymentScreens(amount); // <-- DISABLED: Now unified inside
-  // playPaymentSequence
   playPaymentSequence(amount);
 
   if (lcdOk)
@@ -1568,25 +1153,36 @@ void setup() {
   delay(300);
   randomSeed(micros());
 
-  Serial.println("\n╔════════════════════════════════════════╗");
-  Serial.println("║  SOUNDBOX v2.1 - FLASH EN RESET       ║");
-  Serial.println("╚════════════════════════════════════════╝");
+  Serial.println("\n╔════════════════════════════════╗");
+  Serial.println("║  SOUNDBOX v3.0 - WIFI ONLY    ║");
+  Serial.println("╚════════════════════════════════╝");
   Serial.println();
 
   // Preferences MUST be opened BEFORE handleENTripleResetEarly
   Serial.println("[STEP] Opening preferences...");
   prefs.begin("soundbox", false);
 
-  // LCD init BEFORE showing reset indicator
+  // LCD init
   Serial.println("[STEP] Initializing LCD...");
   lcdOk = initLCD();
+
+  pinMode(EN_RESET_PIN, INPUT_PULLUP);
+
+  // Show Boot Mode
+  if (lcdOk) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("SOUNDBOX PRO");
+    lcd.setCursor(0, 1);
+    lcd.print("WIFI VERSION");
+    delay(2000);
+  }
 
   // Now handle EN reset detection (after prefs + LCD ready)
   Serial.println("[STEP] Checking EN reset sequence...");
   handleENTripleResetEarly();
-  showENResetIndicator(); // Show "RESET X/3" if applicable
+  showENResetIndicator();
 
-  // Load rest of preferences
   loadPrefs();
   Serial.printf("[STEP] ✓ SSID='%s', paired=%s\n", wifiSsid.c_str(),
                 isPaired() ? "YES" : "NO");
@@ -1594,22 +1190,15 @@ void setup() {
   // DFPlayer init
   Serial.println("[STEP] Initializing DFPlayer...");
   dfInitNonBlocking();
+  if (dfOk)
+    playTrack(8, 8000); // 0008.mp3 "Selamat Datang"
 
-  // Play "Selamat Datang" (0008.mp3)
-  if (dfOk) {
-    playTrack(8, 8000); // 8 seconds duration
-  }
-
-  // Start AP first (for lwIP init before server.begin)
+  // WIFI MODE
+  Serial.println("[STEP] Starting WiFi Mode...");
   Serial.println("[STEP] Starting Access Point...");
   startAP();
 
-  // =====================
-  // HTTP Server Setup
-  // =====================
   Serial.println("[STEP] Starting HTTP Server...");
-
-  // Register Routes
   server.on("/", HTTP_GET, handleRoot);
   server.on("/save-wifi", HTTP_POST, handleSaveWifi);
   server.on("/pair", HTTP_GET, handlePair);
@@ -1619,59 +1208,39 @@ void setup() {
   server.on("/restart", HTTP_GET, handleRestart);
   server.on("/heap", HTTP_GET, handleHeap);
   server.onNotFound(handleNotFound);
-
   server.begin();
-  Serial.println("[HTTP] \u2713 Server started on port 80");
 
   // Connect to WiFi if configured
   if (!wifiSsid.isEmpty()) {
     Serial.println("[STEP] Connecting to WiFi...");
-    connectWiFi(15000); // Plays Track 6 (Wifi Tersambung) inside
-
-    // Fix: Play "Pairing Tersambung" (0007.mp3) if already paired
+    connectWiFi(15000);
     if (WiFi.status() == WL_CONNECTED && isPaired()) {
-      Serial.println("[STEP] Device is paired, playing pairing sound...");
-      playTrack(7, 4000); // 4 seconds duration
+      Serial.println("[STEP] Paired, playing sound...");
+      playTrack(7, 4000);
     }
-  } else {
-    Serial.println("[STEP] No WiFi configured, skipping...");
   }
-
-  // Enforce AP policy
-  Serial.println("[STEP] Enforcing AP policy...");
   enforceApPolicy();
 
-  // Set initial UI state
+  // Final UI Update
   String devId = apSsid();
   if (WiFi.status() == WL_CONNECTED && isPaired()) {
     if (lcdOk)
-      lcd2("READY", storeId);
-    Serial.println("[UI] Device READY");
+      lcd2("READY (WIFI)", storeId);
   } else if (WiFi.status() == WL_CONNECTED) {
     if (lcdOk)
-      lcd2("MENUNGGU..", devId);
-    Serial.println("[UI] WiFi OK, waiting for pairing via worker");
+      lcd2("WAIT PAIR", devId);
   } else {
     if (lcdOk)
       lcd2("SET WIFI", "192.168.4.1");
-    Serial.println("[UI] Waiting for WiFi setup");
   }
 
-  Serial.println();
-  Serial.println("╔════════════════════════════════════════╗");
-  Serial.println("║           SETUP COMPLETE               ║");
-  Serial.println("╚════════════════════════════════════════╝");
-  Serial.println("\n📱 Setup Portal: http://192.168.4.1/");
-  Serial.println("📊 Status: http://192.168.4.1/status");
-  Serial.printf("🆔 Device ID: %s\n", devId.c_str());
-  Serial.println("🗑️ Factory Reset: Press EN 3x OR http://192.168.4.1/factory");
-  Serial.println();
+  Serial.println("\n[SETUP] COMPLETE");
 
+  // Init Polling
   nextPollAt = millis() + jitteredDelay(POLL_MS);
   backoffMs = POLL_MS;
 
-  // Clear EN reset counter after successful boot
-  // Prevents accidental factory reset on normal reboots
+  // Clear EN reset counter
   prefs.putUInt("enCount", 0);
   prefs.putUInt("enFirstBoot", 0);
 }
@@ -1752,22 +1321,27 @@ void pollPairing() {
 // Main Loop
 // =====================
 void loop() {
+  unsigned long now = millis();
+
+  // ==================
+  // WIFI MODE LOOP (Original)
+  // ==================
+
   // 1. Process HTTP server requests
   server.handleClient();
 
-  // 2. Process DNS requests (for captive portal)
+  // 2. Process DNS requests
   if (apOn)
     dnsServer.processNextRequest();
 
   // 3. LCD Idle Animation
-  unsigned long now = millis();
   if (now - lastIdleDraw > IDLE_ANIM_MS) {
     if (lcdOk)
       renderIdleScreen();
     lastIdleDraw = now;
   }
 
-  // 4. Poll Worker for transactions (only if connected + paired)
+  // 4. Poll Worker (WiFi)
   if (WiFi.status() == WL_CONNECTED && isPaired()) {
     if (now >= nextPollAt) {
       Serial.println("[LOOP] Polling worker...");
@@ -1775,36 +1349,29 @@ void loop() {
 
       if (res == POLL_ERROR) {
         pollFailStreak++;
-        backoffMs = min(backoffMs * 2, MAX_BACKOFF);
-        Serial.printf("[LOOP] Poll failed (streak=%d), backing off %d ms\n",
-                      pollFailStreak, backoffMs);
+        backoffMs = min(backoffMs * 2, MAX_BACKOFF); // Fixed MAX_BACKOFF usage
       } else {
         pollFailStreak = 0;
         backoffMs = POLL_MS;
       }
-
       nextPollAt = now + jitteredDelay(backoffMs);
     }
   } else if (WiFi.status() == WL_CONNECTED && !isPaired()) {
-    // 5. Poll Worker for pairing (WiFi OK but not yet paired)
     if (now >= nextPairPollAt) {
       pollPairing();
-      nextPairPollAt = now + 10000; // Check every 10 seconds
+      nextPairPollAt = now + 10000;
     }
   } else {
-    // 6. Auto-reconnect WiFi if dropped
+    // Auto-reconnect
     static uint32_t lastReconnectTry = 0;
     if (!wifiSsid.isEmpty() && WiFi.status() != WL_CONNECTED) {
       if (now - lastReconnectTry > 10000) {
         lastReconnectTry = now;
-        Serial.println("[WIFI] Connection lost, reconnecting...");
-
+        Serial.println("[WIFI] Reconnecting...");
         if (lcdOk)
           lcd2("WIFI", "RECON...");
-
         connectWiFi(8000);
         enforceApPolicy();
-
         if (WiFi.status() == WL_CONNECTED && isPaired() && lcdOk) {
           lcd2("READY", storeId);
         }
@@ -1812,6 +1379,5 @@ void loop() {
     }
   }
 
-  // Yield to allow background tasks
   delay(10);
 }

@@ -983,7 +983,10 @@
       try {
         const res = await fetch(`${BASE_URL}/admin/stores/pair`, {
           method: "POST",
-          headers: hdr(),
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-key": getKey()
+          },
           body: JSON.stringify({ store_id, device_id }),
         });
 

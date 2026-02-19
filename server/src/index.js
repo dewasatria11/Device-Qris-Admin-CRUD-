@@ -524,7 +524,9 @@ export default {
           const row = await env.DB.prepare(
             `SELECT id, transaction_id, amount
              FROM transactions
-             WHERE played=0 AND store_id=?
+             WHERE played=0 
+               AND store_id=?
+               AND created_at > datetime('now', '-5 minutes') -- Only play fresh transactions
              ORDER BY id ASC
              LIMIT 1`
           ).bind(store_id).first();
@@ -595,10 +597,10 @@ export default {
           // Table may already exist, ignore
         }
 
-        // Clean up old entries (>1 hour)
+        // Clean up VERY old entries (>30 days) just to keep DB clean
         try {
           await env.DB.prepare(
-            `DELETE FROM pending_pairs WHERE created_at < datetime('now', '-1 hour')`
+            `DELETE FROM pending_pairs WHERE created_at < datetime('now', '-30 days')`
           ).run();
         } catch (e) { /* ignore */ }
 
