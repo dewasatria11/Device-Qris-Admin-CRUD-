@@ -1007,6 +1007,39 @@
       }
     }
 
+    async function testSound(store_id, name) {
+      const confirmed = await uiConfirm(`Kirim tes suara ke ${name || store_id}?\n\nIni akan membuat transaksi Rp 1 agar soundbox berbunyi "Satu Rupiah".`, {
+        title: "Tes Suara",
+        confirmText: "Kirim Tes",
+        cancelText: "Batal"
+      });
+      if (!confirmed) return;
+
+      try {
+        log(`POST /admin/stores/test ${store_id}...`);
+        const res = await fetch(`${BASE_URL}/admin/stores/test`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-key": getKey()
+          },
+          body: JSON.stringify({ store_id }),
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err);
+        }
+
+        const data = await res.json();
+        toast("Tes suara dikirim!", "success");
+        log(`Test sound for ${store_id}: TX ID ${data.transaction_id}`);
+        await refreshTransactions(); // Refresh table to see the new Rp 1 tx
+      } catch (e) {
+        await handleError(e, "Gagal kirim tes suara");
+      }
+    }
+
     function renderTable(stores) {
       const wrap = document.getElementById("tableWrap");
       if (!stores.length) {
@@ -1026,6 +1059,7 @@
             <div class="tokenBox">${escapeHtml(token)}</div>
             <div class="actions" style="margin-top:8px">
               <button class="secondary" onclick="openPairModal('${escapeJs(s.store_id)}','${escapeJs(s.name || "")}')">Pair Device</button>
+              <button class="secondary" onclick="testSound('${escapeJs(s.store_id)}','${escapeJs(s.name || "")}')">Tes Suara</button>
             </div>
           </td>
           <td>
