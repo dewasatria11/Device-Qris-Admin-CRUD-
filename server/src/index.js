@@ -165,6 +165,7 @@ export default {
             admin_clear_transactions: "POST /admin/transactions/clear {store_id}",
             admin_list_devices: "GET /admin/devices",
             admin_pair_device: "POST /admin/stores/pair {store_id, device_id}",
+            admin_test_sound: "POST /admin/stores/test {store_id}",
             pair_check: "GET /pair-check?device_id=SOUNDBOX-XXXX",
             cashier_qris: "POST /qris {store_id, amount}",
             soundbox_poll: "GET /next-transaction?store_id=... (x-device-token)",
@@ -618,6 +619,43 @@ export default {
         return json({
           ok: true, device_id, store_id, store_name,
           message: `Pending pair created. Device ${device_id} will auto-pair on next poll.`
+        });
+      }
+
+      // ===============================
+      // ADMIN: TEST SOUND (Create fake transaction)
+      // POST /admin/stores/test
+      // Body: { store_id }
+      // ===============================
+      if (path === "/admin/stores/test" && request.method === "POST") {
+        const unauth = requireAdmin(request, env);
+        if (unauth) return unauth;
+
+        let body;
+        try { body = await request.json(); }
+        catch { return text("Invalid JSON", 400); }
+
+        const store_id = String(body.store_id || "").trim();
+        if (!store_id) return text("store_id required", 400);
+
+        const store = await env.DB.prepare(
+          `SELECT enabled, name FROM stores WHERE store_id=? LIMIT 1`
+        ).bind(store_id).first();
+
+        if (!store) return text("Store not found", 404);
+
+        const transaction_id = makeTransactionId();
+        // Create a 1 rupiah transaction for testing sound
+        await env.DB.prepare(
+          `INSERT INTO transactions
+           (transaction_id, store_id, amount, played)
+           VALUES (?, ?, 1, 0)`
+        ).bind(transaction_id, store_id).run();
+
+        return json({
+          ok: true,
+          message: `Test sound sent to ${store.name || store_id}`,
+          transaction_id
         });
       }
 
