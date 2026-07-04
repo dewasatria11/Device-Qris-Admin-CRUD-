@@ -825,7 +825,7 @@
           statusPill = `<span class="pill neutral">Idle (${minsAgo}m)</span>`;
         }
 
-        const timeStr = Number.isNaN(minsAgo) ? "-" : `${minsAgo} menit lalu`;
+        const timeStr = formatMinsAgo(minsAgo);
 
         return `<tr>
           <td>
@@ -1084,6 +1084,23 @@
       if (stores.some(s => s.store_id === current)) {
         txStoreSelect.value = current;
       }
+    }
+
+    function formatMinsAgo(minsAgo) {
+      if (!Number.isFinite(minsAgo) || minsAgo === null) return "-";
+      if (minsAgo < 0) return "baru saja";
+      if (minsAgo < 60) return `${minsAgo} menit lalu`;
+      const hours = Math.floor(minsAgo / 60);
+      const mins = minsAgo % 60;
+      if (hours < 24) {
+        return mins === 0 ? `${hours} jam lalu` : `${hours} jam ${mins} menit lalu`;
+      }
+      const days = Math.floor(hours / 24);
+      const remainingHours = hours % 24;
+      let str = `${days} hari`;
+      if (remainingHours > 0) str += ` ${remainingHours} jam`;
+      if (mins > 0) str += ` ${mins} menit`;
+      return `${str} lalu`;
     }
 
     function formatWibDate(value) {
