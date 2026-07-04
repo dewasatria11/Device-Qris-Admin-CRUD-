@@ -512,9 +512,6 @@
         </div>
       </div>
       <div id="devicesTableWrap" class="table-wrap"></div>
-      <div class="muted" style="margin-top:12px">
-        Status <strong>Online</strong> jika heartbeat < 5 menit lalu. <strong>Offline</strong> jika > 30 menit.
-      </div>
     </section>
 
     <section class="card">
@@ -817,9 +814,11 @@
         const minsAgo = lastSeenDate ? Math.floor((Date.now() - lastSeenDate.getTime()) / 60000) : NaN;
 
         let statusPill = "Unknown";
-        if (Number.isFinite(minsAgo) && minsAgo < 5) {
+        if (Number.isNaN(minsAgo)) {
+          statusPill = `<span class="pill neutral">No Setup</span>`;
+        } else if (minsAgo < 5) {
           statusPill = `<span class="pill ok">Online</span>`;
-        } else if (Number.isFinite(minsAgo) && minsAgo > 30) {
+        } else if (minsAgo > 30) {
           statusPill = `<span class="pill off">Offline</span>`;
         } else {
           statusPill = `<span class="pill neutral">Idle (${minsAgo}m)</span>`;
