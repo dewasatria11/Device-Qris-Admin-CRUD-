@@ -23,6 +23,19 @@ var getAdminKey = /* @__PURE__ */ __name((req) => (req.headers.get("x-admin-key"
 var getDeviceToken = /* @__PURE__ */ __name((req) => (req.headers.get("x-device-token") || "").trim() || null, "getDeviceToken");
 var heartbeatCols = null;
 var heartbeatChecked = false;
+var playedAtMigrationDone = false;
+async function ensurePlayedAt(env) {
+  if (playedAtMigrationDone) return;
+  playedAtMigrationDone = true;
+  try {
+    await env.DB.prepare(
+      `ALTER TABLE transactions ADD COLUMN played_at TEXT`
+    ).run();
+  } catch (e) {
+    // Column already exists - ignore
+  }
+}
+__name(ensurePlayedAt, "ensurePlayedAt");
 async function getHeartbeatCols(env) {
   if (heartbeatChecked)
     return heartbeatCols;
@@ -133,6 +146,7 @@ var src_default = {
   },
   async fetch(request, env) {
     try {
+      await ensurePlayedAt(env);
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders });
       }
@@ -299,7 +313,7 @@ var src_default = {
           binds.push(Number(playedParam));
         }
         let sql = `
-        SELECT id, transaction_id, store_id, amount, played, created_at
+        SELECT id, transaction_id, store_id, amount, played, created_at, played_at
           FROM transactions
         `;
         if (where.length)
@@ -462,7 +476,8 @@ var src_default = {
             break;
           const upd = await env.DB.prepare(
             `UPDATE transactions
-             SET played=1
+             SET played=1,
+                 played_at=datetime('now')
              WHERE id=? AND played=0`
           ).bind(row.id).run();
           const changes = upd?.meta?.changes ?? 0;
