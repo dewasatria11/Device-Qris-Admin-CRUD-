@@ -323,7 +323,7 @@ var src_default = {
         if (!storeId)
           return text("store_id required", 400);
         const res = await env.DB.prepare(
-          `DELETE FROM transactions WHERE store_id = ?`
+          `DELETE FROM transactions WHERE store_id = ? AND played = 0`
         ).bind(storeId).run();
         const deleted = res?.meta?.changes ?? 0;
         return json({ ok: true, store_id: storeId, deleted });
