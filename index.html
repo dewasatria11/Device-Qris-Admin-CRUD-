@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Soundbox QRIS - Store Admin</title>
+  <title>Soundbox QRIS - Monitoring Alat Soundbox</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -93,7 +93,11 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      justify-content: center
+      justify-content: center;
+      width: 100%;
+      max-width: 340px;
+      justify-self: end;
+      align-self: center
     }
 
     .meta-label {
@@ -427,6 +431,11 @@
         grid-template-columns: 1fr
       }
 
+      .hero-meta {
+        justify-self: stretch;
+        max-width: none
+      }
+
       .modal-card.wide {
         width: min(94vw, 520px)
       }
@@ -454,21 +463,19 @@
     <header class="hero">
       <div>
         <div class="eyebrow">Soundbox QRIS</div>
-        <h1>Store Admin</h1>
-        <p class="lead">Kelola store dan soundbox dengan cepat. Satu store terhubung ke satu device soundbox.</p>
+        <h1>Monitoring Alat Soundbox</h1>
+        <p class="lead">Pantau status koneksi soundbox, kelola data store, serta pasangkan device soundbox secara real-time.</p>
       </div>
       <div class="hero-meta">
-        <div class="meta-label">Base URL</div>
+        <div class="meta-label">Endpoint Cloudflare Worker :</div>
         <div class="meta-chip" id="baseUrlText"></div>
-        <div class="meta-note">ADMIN_KEY disimpan di sessionStorage dan hilang saat tab atau browser ditutup.</div>
       </div>
     </header>
 
     <div class="grid">
-      <section class="card">
+      <section class="card" style="align-self: start;">
         <div class="card-head">
           <h3>Login Admin</h3>
-          <span class="pill neutral">sessionStorage</span>
         </div>
         <div class="row">
           <div>
@@ -477,15 +484,11 @@
           </div>
           <button onclick="saveKey()">Simpan Key</button>
         </div>
-        <div class="muted" style="margin-top:12px">
-          Pastikan ADMIN_KEY benar sebelum mengambil daftar store.
-        </div>
       </section>
 
-      <section class="card">
+      <section class="card" style="align-self: start;">
         <div class="card-head">
           <h3>Tambah / Update Store</h3>
-          <span class="pill neutral">upsert</span>
         </div>
         <div class="row">
           <div>
@@ -496,12 +499,8 @@
             <label>name</label>
             <input id="name" placeholder="Nama Toko" />
           </div>
-          <button onclick="upsertStore()">Simpan</button>
-          <button class="secondary" onclick="generateToken()">Generate Token Baru</button>
         </div>
-        <div class="muted" style="margin-top:12px">
-          Simpan akan update name. Generate Token Baru akan membuat token baru untuk pairing soundbox.
-        </div>
+        <button onclick="upsertStore()" style="display: block; width: 100%; max-width: 400px; margin: 24px auto 0;">Simpan</button>
       </section>
     </div>
 
@@ -837,7 +836,7 @@
           <td>${d.ip_address || "-"}</td>
           <td>
             ${timeStr}<br/>
-            <span class="muted" style="font-size:11px">${lastSeenDate ? lastSeenDate.toLocaleString() : "-"}</span>
+            <span class="muted" style="font-size:11px">${formatWibDate(d.last_seen)}</span>
           </td>
           <td>${statusPill}</td>
         </tr>`;
@@ -881,19 +880,6 @@
       } catch (e) {
         await handleError(e, "Gagal menyimpan");
       }
-    }
-
-    function randomHex(len = 32) {
-      const arr = new Uint8Array(len / 2);
-      crypto.getRandomValues(arr);
-      return [...arr].map(b => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    async function generateToken() {
-      const { store_id, name } = getForm();
-      if (!store_id || !name) { await uiAlert("Isi store_id dan name dulu, baru generate token", { title: "Input belum lengkap" }); return; }
-      const newToken = "sb_" + randomHex(32);
-      await upsertStore({ device_token: newToken });
     }
 
     async function enableStore(store_id) {
@@ -1052,7 +1038,7 @@
         const token = s.device_token || "";
         return `
         <tr>
-          <td><b>${escapeHtml(s.store_id)}</b><div class="muted">${escapeHtml(s.created_at || "")}</div></td>
+          <td><b>${escapeHtml(s.store_id)}</b><div class="muted">${formatWibDate(s.created_at)}</div></td>
           <td>${escapeHtml(s.name || "")}</td>
           <td>${badge}</td>
           <td>
@@ -1100,6 +1086,23 @@
       }
     }
 
+    function formatWibDate(value) {
+      if (!value) return "-";
+      let date;
+      if (value instanceof Date) {
+        date = value;
+      } else {
+        const str = String(value);
+        date = str.includes("T") ? new Date(str) : new Date(str.replace(" ", "T") + "Z");
+      }
+      if (Number.isNaN(date.getTime())) return String(value);
+      return new Intl.DateTimeFormat("id-ID", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+        hour12: false, timeZone: "Asia/Jakarta"
+      }).format(date);
+    }
+
     function formatRupiah(amount) {
       const num = Number(amount);
       if (!Number.isFinite(num)) return "-";
@@ -1121,7 +1124,7 @@
           <td>${escapeHtml(t.store_id || "")}</td>
           <td>${formatRupiah(t.amount)}</td>
           <td>${playedBadge}</td>
-          <td>${escapeHtml(t.created_at || "")}</td>
+          <td>${formatWibDate(t.created_at)}</td>
         </tr>
       `;
       }).join("");
