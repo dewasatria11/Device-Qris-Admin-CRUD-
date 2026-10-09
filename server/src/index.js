@@ -24,6 +24,10 @@ var getDeviceToken = /* @__PURE__ */ __name((req) => (req.headers.get("x-device-
 var heartbeatCols = null;
 var heartbeatChecked = false;
 var playedAtMigrationDone = false;
+var alertMigrationDone = false;
+var WA_GATEWAY_SEND_URL = "https://wa.servernyadewa.web.id/api/send";
+var WA_ALERT_NUMBERS = ["628561943396", "6281218768593"];
+var WA_ALERT_TEXT = "SOUNDBOX NYA MATI (CEK / CAS)";
 async function ensurePlayedAt(env) {
   if (playedAtMigrationDone) return;
   playedAtMigrationDone = true;
@@ -36,6 +40,23 @@ async function ensurePlayedAt(env) {
   }
 }
 __name(ensurePlayedAt, "ensurePlayedAt");
+async function ensureAlertColumns(env) {
+  if (alertMigrationDone) return;
+  try {
+    await env.DB.prepare(
+      `ALTER TABLE device_heartbeat ADD COLUMN last_alert_at DATETIME`
+    ).run();
+    alertMigrationDone = true;
+  } catch (e) {
+    const msg = e?.message || String(e);
+    if (msg.includes("duplicate column") || msg.includes("already exists")) {
+      alertMigrationDone = true;
+    } else {
+      console.warn("[DB] ensureAlertColumns notice:", msg);
+    }
+  }
+}
+__name(ensureAlertColumns, "ensureAlertColumns");
 async function getHeartbeatCols(env) {
   if (heartbeatChecked)
     return heartbeatCols;
@@ -110,8 +131,35 @@ function normalizePath(pathname) {
   return p === "" ? "/" : p;
 }
 __name(normalizePath, "normalizePath");
-async function sendAlert(storeName, minutesOffline) {
-  console.log(`[ALERT] Store '${storeName}' offline for ${minutesOffline} mins.`);
+async function sendWhatsApp(to, text2) {
+  const res = await fetch(WA_GATEWAY_SEND_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ to, text: text2 })
+  });
+  const responseText = await res.text();
+  if (!res.ok) {
+    throw new Error(`WA send failed to ${to}: HTTP ${res.status} ${responseText}`);
+  }
+  return responseText;
+}
+__name(sendWhatsApp, "sendWhatsApp");
+async function sendAlert(device) {
+  const storeLabel = device.name || device.store_id || "";
+  const text2 = storeLabel ? `${WA_ALERT_TEXT}\nToko: ${storeLabel}` : WA_ALERT_TEXT;
+  console.log(`[ALERT] Store '${storeLabel}' offline.`);
+  const results = [];
+  for (const to of WA_ALERT_NUMBERS) {
+    try {
+      const responseText = await sendWhatsApp(to, text2);
+      results.push({ to, ok: true, response: responseText });
+      console.log(`[WA ALERT] sent to ${to}`);
+    } catch (e) {
+      results.push({ to, ok: false, error: e?.message || String(e) });
+      console.error(`[WA ALERT] failed to ${to}:`, e);
+    }
+  }
+  return results;
 }
 __name(sendAlert, "sendAlert");
 var src_default = {
@@ -123,23 +171,35 @@ var src_default = {
         console.log("Skip scheduled check: device_heartbeat key column not found.");
         return;
       }
-      const thresholdMinutes = 30;
+      await ensureAlertColumns(env);
+      const thresholdMinutes = 1;
       const offlineDevices = await env.DB.prepare(`
-        SELECT s.name, s.store_id, d.last_seen
+        SELECT s.name, s.store_id, d.device_id, d.last_seen, d.last_alert_at
         FROM stores s
         JOIN device_heartbeat d ON ${joinExpr}
         WHERE s.enabled = 1 
           AND d.last_seen < datetime('now', '-' || ? || ' minutes')
-          AND d.last_seen > datetime('now', '-24 hours') -- Avoid alerting for long dead devices continuously
+          AND d.last_seen > datetime('now', '-24 hours')
+          AND (d.last_alert_at IS NULL OR d.last_alert_at < d.last_seen)
       `).bind(thresholdMinutes).all();
       const devices = offlineDevices.results || [];
       for (const dev of devices) {
         const lastSeen = new Date(dev.last_seen).getTime();
         const now = Date.now();
-        const diffMins = Math.floor((now - lastSeen) / 6e4);
-        ctx.waitUntil(sendAlert(dev.name, diffMins));
+        const diffMins = Math.max(1, Math.floor((now - lastSeen) / 6e4));
+        ctx.waitUntil((async () => {
+          try {
+            await sendAlert({ ...dev, minutesOffline: diffMins });
+            await env.DB.prepare(
+              `UPDATE device_heartbeat SET last_alert_at=datetime('now') WHERE device_id=?`
+            ).bind(dev.device_id).run();
+            console.log(`[ALERT] last_alert_at updated for device ${dev.device_id}`);
+          } catch (e) {
+            console.error(`[ALERT] Failed to process alert for device ${dev.device_id || dev.store_id}:`, e);
+          }
+        })());
       }
-      console.log(`Scheduled check done. Found ${devices.length} offline devices.`);
+      console.log(`Scheduled check done. Found ${devices.length} offline devices to alert.`);
     } catch (e) {
       console.error("Scheduled task error:", e);
     }
@@ -147,6 +207,7 @@ var src_default = {
   async fetch(request, env) {
     try {
       await ensurePlayedAt(env);
+      await ensureAlertColumns(env);
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders });
       }
@@ -168,6 +229,7 @@ var src_default = {
             admin_list_devices: "GET /admin/devices",
             admin_pair_device: "POST /admin/stores/pair {store_id, device_id}",
             admin_test_sound: "POST /admin/stores/test {store_id}",
+            admin_test_wa_alert: "POST /admin/test-wa-alert",
             pair_check: "GET /pair-check?device_id=SOUNDBOX-XXXX",
             cashier_qris: "POST /qris {store_id, amount}",
             soundbox_poll: "GET /next-transaction?store_id=... (x-device-token)",
@@ -359,7 +421,9 @@ var src_default = {
         }
         const result = await env.DB.prepare(`
           SELECT s.store_id, s.name, s.device_token, 
-                 d.last_seen, d.ip_address, d.firmware_version
+                 d.last_seen, d.ip_address, d.firmware_version,
+                 ROUND((julianday('now') - julianday(d.last_seen)) * 86400) AS age_seconds,
+                 datetime('now') AS server_time
           FROM stores s
           LEFT JOIN device_heartbeat d ON ${joinExpr}
           ORDER BY d.last_seen DESC
@@ -625,6 +689,23 @@ var src_default = {
           ok: true,
           message: `Test sound sent to ${store.name || store_id}`,
           transaction_id
+        });
+      }
+      if (path === "/admin/test-wa-alert" && request.method === "POST") {
+        const unauth = requireAdmin(request, env);
+        if (unauth)
+          return unauth;
+        const results = await sendAlert({
+          name: "TEST ALERT",
+          store_id: "test-wa-alert",
+          minutesOffline: 1,
+          last_seen: new Date().toISOString()
+        });
+        return json({
+          ok: results.every((r) => r.ok),
+          message: WA_ALERT_TEXT,
+          recipients: WA_ALERT_NUMBERS,
+          results
         });
       }
       if (path === "/pair-check" && request.method === "GET") {

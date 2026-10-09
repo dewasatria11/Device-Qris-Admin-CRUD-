@@ -1,14 +1,16 @@
 name = "server"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
-
-# Custom domain (workers.dev diblokir oleh beberapa ISP, mis. XL)
-routes = [
-  { pattern = "soundbox.servernyadewa.web.id", custom_domain = true }
-]
+workers_dev = true
 
 # D1 Database Binding
 [[d1_databases]]
 binding = "DB" # Matches env.DB in your code
 database_name = "qris_db"
-database_id = "fe2aba17-7682-4f1f-afba-85413523f7ad"
+database_id = "97812877-64d1-4b36-a4c6-a3ea3ea10ddd"
+
+# Cron Trigger: check every 1 minute
+[triggers]
+crons = ["* * * * *"]
+
+

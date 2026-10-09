@@ -509,7 +509,11 @@
         <h3>Devices Monitor</h3>
         <div class="actions">
           <button class="secondary" onclick="refreshDevices()">Refresh Devices</button>
+          <button onclick="testWaAlert()">Tes Alert WA</button>
         </div>
+      </div>
+      <div class="muted" style="margin-bottom:12px">
+        Alert otomatis dikirim jika soundbox offline lebih dari 1 menit ke 08561943396 dan 081218768593.
       </div>
       <div id="devicesTableWrap" class="table-wrap"></div>
     </section>
@@ -810,15 +814,20 @@
         <tbody>`;
 
       html += devices.map(d => {
-        const lastSeenDate = parseD1Date(d.last_seen);
-        const minsAgo = lastSeenDate ? Math.floor((Date.now() - lastSeenDate.getTime()) / 60000) : NaN;
+        let minsAgo = NaN;
+        if (Number.isFinite(Number(d.age_seconds))) {
+          minsAgo = Math.floor(Number(d.age_seconds) / 60);
+        } else {
+          const lastSeenDate = parseD1Date(d.last_seen);
+          minsAgo = lastSeenDate ? Math.floor((Date.now() - lastSeenDate.getTime()) / 60000) : NaN;
+        }
 
         let statusPill = "Unknown";
-        if (Number.isNaN(minsAgo)) {
+        if (Number.isNaN(minsAgo) || d.last_seen === null || d.last_seen === undefined) {
           statusPill = `<span class="pill neutral">No Setup</span>`;
-        } else if (minsAgo < 5) {
+        } else if (minsAgo < 2) {
           statusPill = `<span class="pill ok">Online</span>`;
-        } else if (minsAgo > 30) {
+        } else if (minsAgo > 10) {
           statusPill = `<span class="pill off">Offline</span>`;
         } else {
           statusPill = `<span class="pill neutral">Idle (${minsAgo}m)</span>`;
@@ -828,11 +837,11 @@
 
         return `<tr>
           <td>
-            <strong>${d.name || "(No Name)"}</strong><br/>
-            <span class="muted" style="font-size:11px">${d.store_id}</span>
+            <strong>${escapeHtml(d.name || "(No Name)")}</strong><br/>
+            <span class="muted" style="font-size:11px">${escapeHtml(d.store_id || "")}</span>
           </td>
-          <td>${d.firmware_version || "-"}</td>
-          <td>${d.ip_address || "-"}</td>
+          <td>${escapeHtml(d.firmware_version || "-")}</td>
+          <td>${escapeHtml(d.ip_address || "-")}</td>
           <td>
             ${timeStr}<br/>
             <span class="muted" style="font-size:11px">${formatWibDate(d.last_seen)}</span>
@@ -1022,6 +1031,44 @@
         await refreshTransactions(); // Refresh table to see the new Rp 1 tx
       } catch (e) {
         await handleError(e, "Gagal kirim tes suara");
+      }
+    }
+
+    async function testWaAlert() {
+      const confirmed = await uiConfirm(
+        "Kirim pesan tes WhatsApp alert sekarang ke nomor 08561943396 dan 081218768593?",
+        {
+          title: "Tes WhatsApp Alert",
+          confirmText: "Kirim Sekarang",
+          cancelText: "Batal"
+        }
+      );
+      if (!confirmed) return;
+
+      try {
+        log("POST /admin/test-wa-alert ...");
+        const res = await fetch(`${BASE_URL}/admin/test-wa-alert`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-key": getKey()
+          }
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(err);
+        }
+
+        const data = await res.json();
+        toast("Tes WA Alert terkirim!", "success");
+        log(`WA Alert test sent: ${JSON.stringify(data.results)}`);
+        await uiAlert(
+          `Pesan berhasil dikirim ke WhatsApp!\n\nPesan: ${data.message}\nNomor: ${data.recipients.join(", ")}`,
+          { title: "WhatsApp Alert Terkirim" }
+        );
+      } catch (e) {
+        await handleError(e, "Gagal kirim tes WA alert");
       }
     }
 
@@ -1222,6 +1269,11 @@
 
     // Auto-refresh kalau sudah ada key tersimpan
     if (getKey()) refresh();
+
+    // Auto refresh status devices setiap 10 detik agar realtime
+    setInterval(() => {
+      if (getKey()) refreshDevices();
+    }, 10000);
   </script>
 </body>
 
