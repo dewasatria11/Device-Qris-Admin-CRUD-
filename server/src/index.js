@@ -25,9 +25,64 @@ var heartbeatCols = null;
 var heartbeatChecked = false;
 var playedAtMigrationDone = false;
 var alertMigrationDone = false;
+var storeColsMigrationDone = false;
+var WA_GATEWAYS = [
+  { id: "wa", name: "WA 1 (wa)", url: "https://wa.servernyadewa.web.id/api/send" },
+  { id: "wa2", name: "WA 2 (wa2)", url: "https://wa2.servernyadewa.web.id/api/send" },
+  { id: "wa3", name: "WA 3 (wa3)", url: "https://wa3.servernyadewa.web.id/api/send" },
+  { id: "wa4", name: "WA 4 (wa4)", url: "https://wa4.servernyadewa.web.id/api/send" },
+  { id: "wa5", name: "WA 5 (wa5)", url: "https://wa5.servernyadewa.web.id/api/send" }
+];
 var WA_GATEWAY_SEND_URL = "https://wa.servernyadewa.web.id/api/send";
 var WA_ALERT_NUMBERS = ["628561943396", "6281218768593"];
 var WA_ALERT_TEXT = "SOUNDBOX NYA MATI (CEK / CAS)";
+
+function normalizeGatewayUrl(gateway) {
+  if (!gateway) return WA_GATEWAY_SEND_URL;
+  const g = String(gateway).trim();
+  const found = WA_GATEWAYS.find((item) => item.id === g.toLowerCase() || item.url === g);
+  if (found) return found.url;
+  if (g.startsWith("http://") || g.startsWith("https://")) {
+    return g.endsWith("/api/send") ? g : (g.replace(/\/+$/, "") + "/api/send");
+  }
+  return WA_GATEWAY_SEND_URL;
+}
+
+function cleanPhone(raw) {
+  let cleaned = String(raw || "").trim().replace(/[^0-9]/g, "");
+  if (!cleaned) return "";
+  if (cleaned.startsWith("08")) cleaned = "628" + cleaned.slice(2);
+  else if (cleaned.startsWith("8")) cleaned = "628" + cleaned.slice(1);
+  return cleaned;
+}
+
+function parsePhoneNumbers(input) {
+  if (!input) return [];
+  if (Array.isArray(input)) return input.map((s) => cleanPhone(s)).filter(Boolean);
+  return String(input)
+    .split(/[\r\n,;]+/)
+    .map((s) => cleanPhone(s))
+    .filter(Boolean);
+}
+
+async function ensureStoreColumns(env) {
+  if (storeColsMigrationDone) return;
+  const addColumn = async (sql, label) => {
+    try {
+      await env.DB.prepare(sql).run();
+    } catch (e) {
+      const msg = e?.message || String(e);
+      if (!msg.includes("duplicate column") && !msg.includes("already exists")) {
+        console.warn(`[DB] ensureStoreColumns ${label} notice:`, msg);
+        throw e;
+      }
+    }
+  };
+  await addColumn(`ALTER TABLE stores ADD COLUMN wa_gateway TEXT`, "wa_gateway");
+  await addColumn(`ALTER TABLE stores ADD COLUMN wa_target_numbers TEXT`, "wa_target_numbers");
+  storeColsMigrationDone = true;
+}
+__name(ensureStoreColumns, "ensureStoreColumns");
 async function ensurePlayedAt(env) {
   if (playedAtMigrationDone) return;
   playedAtMigrationDone = true;
@@ -131,15 +186,16 @@ function normalizePath(pathname) {
   return p === "" ? "/" : p;
 }
 __name(normalizePath, "normalizePath");
-async function sendWhatsApp(to, text2) {
-  const res = await fetch(WA_GATEWAY_SEND_URL, {
+async function sendWhatsApp(to, text2, gatewayUrl = WA_GATEWAY_SEND_URL) {
+  const sendUrl = normalizeGatewayUrl(gatewayUrl);
+  const res = await fetch(sendUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ to, text: text2 })
   });
   const responseText = await res.text();
   if (!res.ok) {
-    throw new Error(`WA send failed to ${to}: HTTP ${res.status} ${responseText}`);
+    throw new Error(`WA send failed via ${sendUrl} to ${to}: HTTP ${res.status} ${responseText}`);
   }
   return responseText;
 }
@@ -147,16 +203,19 @@ __name(sendWhatsApp, "sendWhatsApp");
 async function sendAlert(device) {
   const storeLabel = device.name || device.store_id || "";
   const text2 = storeLabel ? `${WA_ALERT_TEXT}\nToko: ${storeLabel}` : WA_ALERT_TEXT;
-  console.log(`[ALERT] Store '${storeLabel}' offline.`);
+  const gatewayUrl = normalizeGatewayUrl(device.wa_gateway);
+  const targetNumbers = parsePhoneNumbers(device.wa_target_numbers);
+  const recipients = targetNumbers.length ? targetNumbers : WA_ALERT_NUMBERS;
+  console.log(`[ALERT] Store '${storeLabel}' offline. Gateway=${gatewayUrl}, recipients=${recipients.join(",")}`);
   const results = [];
-  for (const to of WA_ALERT_NUMBERS) {
+  for (const to of recipients) {
     try {
-      const responseText = await sendWhatsApp(to, text2);
-      results.push({ to, ok: true, response: responseText });
-      console.log(`[WA ALERT] sent to ${to}`);
+      const responseText = await sendWhatsApp(to, text2, gatewayUrl);
+      results.push({ to, gateway: gatewayUrl, ok: true, response: responseText });
+      console.log(`[WA ALERT] sent via ${gatewayUrl} to ${to}`);
     } catch (e) {
-      results.push({ to, ok: false, error: e?.message || String(e) });
-      console.error(`[WA ALERT] failed to ${to}:`, e);
+      results.push({ to, gateway: gatewayUrl, ok: false, error: e?.message || String(e) });
+      console.error(`[WA ALERT] failed via ${gatewayUrl} to ${to}:`, e);
     }
   }
   return results;
@@ -172,9 +231,10 @@ var src_default = {
         return;
       }
       await ensureAlertColumns(env);
+      await ensureStoreColumns(env);
       const thresholdMinutes = 1;
       const offlineDevices = await env.DB.prepare(`
-        SELECT s.name, s.store_id, d.device_id, d.last_seen, d.last_alert_at
+        SELECT s.name, s.store_id, s.wa_gateway, s.wa_target_numbers, d.device_id, d.last_seen, d.last_alert_at
         FROM stores s
         JOIN device_heartbeat d ON ${joinExpr}
         WHERE s.enabled = 1 
@@ -208,6 +268,7 @@ var src_default = {
     try {
       await ensurePlayedAt(env);
       await ensureAlertColumns(env);
+      await ensureStoreColumns(env);
       if (request.method === "OPTIONS") {
         return new Response(null, { status: 204, headers: corsHeaders });
       }
@@ -229,7 +290,8 @@ var src_default = {
             admin_list_devices: "GET /admin/devices",
             admin_pair_device: "POST /admin/stores/pair {store_id, device_id}",
             admin_test_sound: "POST /admin/stores/test {store_id}",
-            admin_test_wa_alert: "POST /admin/test-wa-alert",
+            admin_set_wa_config: "POST /admin/stores/wa-config {store_id, wa_gateway, wa_target_numbers}",
+            admin_test_wa_alert: "POST /admin/test-wa-alert {store_id?}",
             pair_check: "GET /pair-check?device_id=SOUNDBOX-XXXX",
             cashier_qris: "POST /qris {store_id, amount}",
             soundbox_poll: "GET /next-transaction?store_id=... (x-device-token)",
@@ -250,31 +312,60 @@ var src_default = {
         const store_id = String(body.store_id || "").trim();
         const name = String(body.name || "").trim();
         const providedToken = String(body.device_token || "").trim();
+        const wa_gateway = String(body.wa_gateway || "").trim();
+        const wa_target_numbers = String(body.wa_target_numbers || "").trim();
         if (!store_id || !name)
           return text("store_id, name required", 400);
         if (!/^[a-z0-9._-]+$/i.test(store_id))
           return text("store_id invalid", 400);
         const existing = await env.DB.prepare(
-          `SELECT device_token FROM stores WHERE store_id=? LIMIT 1`
+          `SELECT device_token, wa_gateway, wa_target_numbers FROM stores WHERE store_id=? LIMIT 1`
         ).bind(store_id).first();
         const device_token = providedToken || existing?.device_token || `sb_${randHex(16)}`;
+        const finalWaGateway = body.wa_gateway !== undefined ? wa_gateway : (existing?.wa_gateway || "");
+        const finalWaTargetNumbers = body.wa_target_numbers !== undefined ? wa_target_numbers : (existing?.wa_target_numbers || "");
         await env.DB.prepare(
-          `INSERT INTO stores (store_id, name, device_token, enabled)
-           VALUES (?, ?, ?, 1)
+          `INSERT INTO stores (store_id, name, device_token, enabled, wa_gateway, wa_target_numbers)
+           VALUES (?, ?, ?, 1, ?, ?)
            ON CONFLICT(store_id)
            DO UPDATE SET
              name=excluded.name,
              enabled=1,
-             device_token=excluded.device_token`
-        ).bind(store_id, name, device_token).run();
-        return json({ ok: true, store_id, name, device_token, enabled: 1 });
+             device_token=excluded.device_token,
+             wa_gateway=excluded.wa_gateway,
+             wa_target_numbers=excluded.wa_target_numbers`
+        ).bind(store_id, name, device_token, finalWaGateway, finalWaTargetNumbers).run();
+        return json({ ok: true, store_id, name, device_token, enabled: 1, wa_gateway: finalWaGateway, wa_target_numbers: finalWaTargetNumbers });
+      }
+      if (path === "/admin/stores/wa-config" && request.method === "POST") {
+        const unauth = requireAdmin(request, env);
+        if (unauth)
+          return unauth;
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return text("Invalid JSON", 400);
+        }
+        const store_id = String(body.store_id || "").trim();
+        const wa_gateway = String(body.wa_gateway || "").trim();
+        const wa_target_numbers = String(body.wa_target_numbers || "").trim();
+        if (!store_id)
+          return text("store_id required", 400);
+        const upd = await env.DB.prepare(
+          `UPDATE stores SET wa_gateway=?, wa_target_numbers=? WHERE store_id=?`
+        ).bind(wa_gateway, wa_target_numbers, store_id).run();
+        const changes = upd?.meta?.changes ?? 0;
+        if (changes !== 1)
+          return text("Store not found", 404);
+        return json({ ok: true, store_id, wa_gateway, wa_target_numbers });
       }
       if (path === "/admin/stores" && request.method === "GET") {
         const unauth = requireAdmin(request, env);
         if (unauth)
           return unauth;
         const rows = await env.DB.prepare(
-          `SELECT store_id, name, enabled, created_at, device_token
+          `SELECT store_id, name, enabled, created_at, device_token, wa_gateway, wa_target_numbers
            FROM stores
            ORDER BY created_at DESC`
         ).all();
@@ -412,7 +503,7 @@ var src_default = {
         const joinExpr = getHeartbeatJoinExpr(cols);
         if (!joinExpr) {
           const result2 = await env.DB.prepare(`
-            SELECT store_id, name, device_token,
+            SELECT store_id, name, device_token, wa_gateway, wa_target_numbers,
                    NULL as last_seen, NULL as ip_address, NULL as firmware_version
             FROM stores
             ORDER BY created_at DESC
@@ -420,7 +511,7 @@ var src_default = {
           return json({ ok: true, devices: result2.results || [] });
         }
         const result = await env.DB.prepare(`
-          SELECT s.store_id, s.name, s.device_token, 
+          SELECT s.store_id, s.name, s.device_token, s.wa_gateway, s.wa_target_numbers,
                  d.last_seen, d.ip_address, d.firmware_version,
                  ROUND((julianday('now') - julianday(d.last_seen)) * 86400) AS age_seconds,
                  datetime('now') AS server_time
@@ -695,16 +786,34 @@ var src_default = {
         const unauth = requireAdmin(request, env);
         if (unauth)
           return unauth;
+        let body = {};
+        try {
+          body = await request.json();
+        } catch {}
+        let store = null;
+        const reqStoreId = String(body?.store_id || "").trim();
+        if (reqStoreId) {
+          store = await env.DB.prepare(
+            `SELECT store_id, name, wa_gateway, wa_target_numbers FROM stores WHERE store_id=? LIMIT 1`
+          ).bind(reqStoreId).first();
+        }
+        const wa_gateway = body?.wa_gateway || store?.wa_gateway || "";
+        const wa_target_numbers = body?.wa_target_numbers || store?.wa_target_numbers || "";
         const results = await sendAlert({
-          name: "TEST ALERT",
-          store_id: "test-wa-alert",
+          name: store?.name || body?.name || (reqStoreId ? reqStoreId : "TEST ALERT"),
+          store_id: store?.store_id || reqStoreId || "test-wa-alert",
+          wa_gateway,
+          wa_target_numbers,
           minutesOffline: 1,
           last_seen: new Date().toISOString()
         });
+        const parsedTargets = parsePhoneNumbers(wa_target_numbers);
+        const recipients = parsedTargets.length ? parsedTargets : WA_ALERT_NUMBERS;
         return json({
           ok: results.every((r) => r.ok),
           message: WA_ALERT_TEXT,
-          recipients: WA_ALERT_NUMBERS,
+          gateway: normalizeGatewayUrl(wa_gateway),
+          recipients,
           results
         });
       }

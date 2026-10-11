@@ -2,3 +2,5 @@ node_modules/
 d1_backup.sql
 .DS_Store
 .wrangler/
+**/.wrangler/
+server/.wrangler/
