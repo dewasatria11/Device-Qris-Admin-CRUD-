@@ -1,1 +1,43 @@
-<html>Hallo!! web ini sudah di hapus. thanks</html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Dihapus</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .close-container {
+            text-align: center;
+        }
+        .close-icon {
+            font-size: 100px;
+            color: #ff4444;
+            animation: closeAnimation 2s ease-in-out infinite;
+        }
+        @keyframes closeAnimation {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="close-container">
+        <div class="close-icon">✕</div>
+        <h1>Website Ini Telah Dihapus</h1>
+    </div>
+</body>
+</html>
